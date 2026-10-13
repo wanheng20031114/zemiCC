@@ -168,7 +168,7 @@ test("credential access still needs human review and invalid commands cannot run
   }
 });
 
-test("permissions persist, active tasks cannot switch, and SDK escalations always prompt", async () => {
+test("permissions persist, active tasks can switch without resolving SDK escalations", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "zemicc-modes-test-"));
   const host = new AgentHost(dir);
   try {
@@ -228,7 +228,14 @@ test("permissions persist, active tasks cannot switch, and SDK escalations alway
       assert.equal(session.approvals.length, 1);
       assert.equal(session.approvals[0].reason, "SDK needs review");
       assert.equal(session.approvals[0].input.command, command);
-      await assert.rejects(host.setPermissions("manual", session.id));
+      await host.setPermissions("manual", session.id);
+      assert.equal(session.permissionMode, "manual");
+      assert.equal(
+        session.approvals.length,
+        1,
+        "Changing mode must not resolve an existing approval",
+      );
+      await host.setPermissions("auto", session.id);
       await host.decide(session.id, session.approvals[0].id, { allow: false });
       assert.equal((await pending).behavior, "deny");
       assert.equal(session.approvals.length, 0);

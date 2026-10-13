@@ -21,4 +21,4 @@ export type McpView = McpDefinition & {
   tools: { name: string; description?: string }[];
   error?: string;
 };
-export type McpState = { servers: McpView[]; busy: boolean };
+export type McpState = { servers: McpView[]; pending: boolean };

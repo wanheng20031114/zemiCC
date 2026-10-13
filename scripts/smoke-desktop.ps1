@@ -16,7 +16,7 @@ try {
   if ($null -eq $state -or $state.version -ne $expectedVersion) { throw 'Packaged application did not become ready' }
   if ($state.connected -or @($state.sessions).Count -ne 0) { throw 'Release started with unexpected user data' }
   $mcp = Invoke-RestMethod 'http://127.0.0.1:4317/api/mcp' -WebSession $zemiSession
-  if ($null -eq $mcp.servers -or @($mcp.servers).Count -ne 0 -or $mcp.busy) { throw 'Release MCP manager did not start empty and idle' }
+  if ($null -eq $mcp.servers -or @($mcp.servers).Count -ne 0 -or $null -eq $mcp.pending -or $mcp.pending) { throw 'Release MCP manager did not start empty and idle' }
   $page = Invoke-WebRequest 'http://127.0.0.1:4317/'
   if ($page.StatusCode -ne 200 -or $page.Content -notmatch 'zemiCC') { throw 'Packaged frontend unavailable' }
   $agentVersion = & (Join-Path $repoRoot 'release\win-unpacked\resources\agent\claude.exe') --version

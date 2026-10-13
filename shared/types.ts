@@ -8,6 +8,7 @@ export type Entry = {
   tool?: string;
   input?: string;
   state?: "running" | "done" | "denied";
+  delivery?: "pending" | "received" | "cancelled";
   time: number;
 };
 export type Question = {
@@ -46,6 +47,7 @@ export type Snapshot = {
   sessions: Session[];
   version: string;
   mcp: McpView[];
+  mcpPending?: boolean;
 };
 export type FileItem = {
   name: string;

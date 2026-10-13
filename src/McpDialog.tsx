@@ -30,12 +30,12 @@ const states = {
 type Pair = { name: string; value: string };
 export function McpDialog({
   servers,
-  busy,
+  pendingUpdates,
   onClose,
   onChange,
 }: {
   servers: McpView[];
-  busy: boolean;
+  pendingUpdates: boolean;
   onClose: () => void;
   onChange: () => Promise<void>;
 }) {
@@ -50,7 +50,7 @@ export function McpDialog({
   const [json, setJson] = useState("");
   const [pending, setPending] = useState("");
   const [error, setError] = useState("");
-  const locked = busy || !!pending;
+  const locked = !!pending;
   function edit(server?: McpView) {
     setEditing(server);
     setName(server?.name || "");
@@ -144,8 +144,8 @@ export function McpDialog({
       onClose={onClose}
     >
       <div className="mcp-panel">
-        {busy && (
-          <p className="mcp-note">任务正在执行，配置可在任务结束后修改。</p>
+        {pendingUpdates && (
+          <p className="mcp-note">配置已保存，将在当前任务结束后接入。</p>
         )}
         {error && (
           <p className="form-error" role="alert">
@@ -321,7 +321,7 @@ export function McpDialog({
             )}
             <p className="mcp-footnote">
               <Plug size={14} />
-              保存后在下一条消息中接入。测试连接只检查服务和工具。
+              可随时编辑，运行中的工具会继续完成。测试连接只检查服务和工具。
             </p>
           </>
         ) : (

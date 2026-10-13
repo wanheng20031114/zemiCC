@@ -1178,7 +1178,14 @@ textarea {
   color: #b6c0a6;
 }
 .send-button.stop {
-  background: #a39272;
+  background: #e9e4d9;
+  color: #817051;
+}
+.message-delivery {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
 }
 .composer-caption {
   display: flex;

@@ -265,7 +265,7 @@ test(
   },
 );
 
-test("MCP API requires authentication, rejects edits during tasks, and returns no credential values", async () => {
+test("MCP API requires authentication, permits edits during tasks, and returns no credential values", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "zemicc-mcp-api-"));
   const server = await startServer({ port: 0, dataDir: dir });
   try {
@@ -312,7 +312,19 @@ test("MCP API requires authentication, rejects edits during tasks, and returns n
           headers,
         })
       ).status,
-      400,
+      200,
+    );
+    assert.equal(server.host.mcp.views().length, 0);
+    assert.equal(session.phase, "running");
+    assert.equal(
+      (
+        await fetch(server.url + "/api/mcp/import", {
+          method: "POST",
+          headers,
+          body,
+        })
+      ).status,
+      200,
     );
     assert.equal(server.host.mcp.views().length, 1);
     session.phase = "idle";

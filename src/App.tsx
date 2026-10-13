@@ -778,6 +778,8 @@ export default function App() {
     mcp: [],
   });
   const [selected, setSelected] = useState<string>();
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const [model, setModel] = useState(MODELS[0].id);
   const [draft, setDraft] = useState(""),
     [connectionOpen, setConnectionOpen] = useState(false),
@@ -878,7 +880,7 @@ export default function App() {
     }
   }
   async function send() {
-    if (!draft.trim() || busy || sending) return;
+    if (!draft.trim() || sending) return;
     if (!project) {
       setProjectOpen(true);
       return;
@@ -888,18 +890,26 @@ export default function App() {
       return;
     }
     setSending(true);
-    let text = draft.trim();
+    const text = draft.trim();
+    const originalSelection = selected;
+    let targetId = current?.id;
+    setDraft("");
     try {
       let session = current;
       if (!session) {
         session = await api<Session>("/sessions", { model });
-        setSelected(session.id);
+        targetId = session.id;
+        if (selectedRef.current === originalSelection) setSelected(session.id);
       }
       stick.current = true;
       await api(`/sessions/${session.id}/send`, { text, model });
-      setDraft("");
     } catch (e) {
       setError((e as Error).message);
+      if (
+        selectedRef.current === targetId ||
+        selectedRef.current === originalSelection
+      )
+        setDraft((value) => value || text);
     } finally {
       setSending(false);
     }
@@ -1165,7 +1175,19 @@ export default function App() {
                           {entry.kind === "assistant" ? (
                             <Markdown text={entry.text} />
                           ) : (
-                            <p>{entry.text}</p>
+                            <>
+                              <p>{entry.text}</p>
+                              {entry.delivery === "pending" && (
+                                <small className="message-delivery">
+                                  待接收
+                                </small>
+                              )}
+                              {entry.delivery === "cancelled" && (
+                                <small className="message-delivery">
+                                  未送达 · 可重新发送
+                                </small>
+                              )}
+                            </>
                           )}
                         </div>
                       </article>
@@ -1197,12 +1219,13 @@ export default function App() {
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder={
-                    busy ? "Agent 正在工作…" : "描述你的想法，剩下的一起完成…"
+                    busy
+                      ? "补充信息，或调整当前任务…"
+                      : "描述你的想法，剩下的一起完成…"
                   }
                   aria-label="消息"
                   rows={3}
                   maxLength={30000}
-                  disabled={busy}
                   onKeyDown={(e) => {
                     if (
                       e.key === "Enter" &&
@@ -1228,7 +1251,7 @@ export default function App() {
                         aria-label="选择模型"
                         value={model}
                         onChange={(e) => setModel(e.target.value)}
-                        disabled={busy}
+                        title={busy ? "新选择用于下一次回复" : "选择模型"}
                       >
                         {MODELS.map((m) => (
                           <option value={m.id} key={m.id}>
@@ -1264,7 +1287,7 @@ export default function App() {
                         : "逐次确认"}
                       <ChevronDown size={12} />
                     </button>
-                    {busy ? (
+                    {busy && (
                       <button
                         className="send-button stop"
                         aria-label="停止生成"
@@ -1277,21 +1300,20 @@ export default function App() {
                       >
                         <Square size={14} fill="currentColor" />
                       </button>
-                    ) : (
-                      <button
-                        className="send-button"
-                        disabled={!draft.trim() || sending || !online}
-                        title="发送 · Enter"
-                        aria-label="发送消息"
-                        onClick={() => void send()}
-                      >
-                        {sending ? (
-                          <span className="spinner" />
-                        ) : (
-                          <ArrowUp size={20} />
-                        )}
-                      </button>
                     )}
+                    <button
+                      className="send-button"
+                      disabled={!draft.trim() || sending || !online}
+                      title={busy ? "补充到当前任务 · Enter" : "发送 · Enter"}
+                      aria-label={busy ? "补充消息" : "发送消息"}
+                      onClick={() => void send()}
+                    >
+                      {sending ? (
+                        <span className="spinner" />
+                      ) : (
+                        <ArrowUp size={20} />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1302,8 +1324,8 @@ export default function App() {
                 </span>
                 <span>
                   <CornerDownLeft size={11} />
-                  发送<span className="caption-separator">·</span>Shift + Enter
-                  换行
+                  {busy ? "补充" : "发送"}
+                  <span className="caption-separator">·</span>Shift + Enter 换行
                 </span>
               </div>
             </div>
@@ -1328,10 +1350,7 @@ export default function App() {
       {mcpOpen && (
         <McpDialog
           servers={state.mcp || []}
-          busy={state.sessions.some(
-            (session) =>
-              session.phase === "running" || session.phase === "approval",
-          )}
+          pendingUpdates={state.mcpPending || false}
           onClose={() => setMcpOpen(false)}
           onChange={reload}
         />
@@ -1369,7 +1388,7 @@ export default function App() {
                 aria-checked={permissionMode === option.mode}
                 key={option.mode}
                 className={`permission-option ${permissionMode === option.mode ? "selected" : ""}`}
-                disabled={busy || permissionSaving || !online}
+                disabled={permissionSaving || !online}
                 onClick={() => void changePermission(option.mode)}
               >
                 <span className="permission-option-icon">{option.icon}</span>
@@ -1395,7 +1414,7 @@ export default function App() {
           </div>
           <p className="permission-note">
             {busy
-              ? "当前任务结束或停止后，即可切换。"
+              ? "新模式用于后续操作，已有确认请求仍需处理。"
               : "应用于当前对话及新对话。命令以你的本机权限运行。"}
           </p>
         </Modal>

@@ -340,8 +340,11 @@ export class McpRegistry {
     }
   }
   async attach(worker: Query) {
+    const revision = this.revision;
     const result = await worker.setMcpServers(this.configs());
-    this.record(await worker.mcpServerStatus(), result.errors);
+    const statuses = await worker.mcpServerStatus();
+    if (revision !== this.revision) return [];
+    this.record(statuses, result.errors);
     return this.views().filter(
       (item) => item.enabled && item.status !== "ready",
     );
