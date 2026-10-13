@@ -407,6 +407,7 @@ export class McpRegistry {
       abort.abort();
       worker?.close();
       finish?.();
+      await worker?.return().catch(() => {});
       this.#probes.delete(abort);
       await fs.rm(runtime, { recursive: true, force: true, maxRetries: 3 });
     }

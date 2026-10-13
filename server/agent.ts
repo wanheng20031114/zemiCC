@@ -18,6 +18,7 @@ import { CredentialVault, sdkEnvironment } from "./security.js";
 import { toolPolicy } from "./permissions.js";
 import { APP_VERSION } from "../shared/version.js";
 import { McpRegistry } from "./mcp.js";
+import { mergeLegacyAssistantDuplicates } from "./messages.js";
 
 export class PromptQueue implements AsyncIterable<SDKUserMessage> {
   items: SDKUserMessage[] = [];
@@ -96,9 +97,8 @@ export class AgentHost {
     await fs.mkdir(this.dataDir, { recursive: true });
     await this.mcp.init();
     try {
-      const data = JSON.parse(
-        await fs.readFile(path.join(this.dataDir, "workspace.json"), "utf8"),
-      ) as {
+      const workspaceFile = path.join(this.dataDir, "workspace.json");
+      const data = JSON.parse(await fs.readFile(workspaceFile, "utf8")) as {
         project?: string;
         permissionMode?: PermissionMode;
         sessions?: Session[];
@@ -106,8 +106,12 @@ export class AgentHost {
       this.project = data.project || "";
       this.permissionMode =
         data.permissionMode === "manual" ? "manual" : "auto";
+      let repaired = false;
       for (const s of data.sessions || []) {
         if (!s.id || !Array.isArray(s.entries)) continue;
+        const entries = mergeLegacyAssistantDuplicates(s.entries);
+        repaired ||= entries.length !== s.entries.length;
+        s.entries = entries;
         s.phase = ["running", "approval"].includes(s.phase)
           ? "interrupted"
           : s.phase;
@@ -118,6 +122,18 @@ export class AgentHost {
         s.permissionFallback = false;
         s.restored = true;
         this.sessions.set(s.id, s);
+      }
+      if (repaired) {
+        await fs
+          .copyFile(
+            workspaceFile,
+            path.join(this.dataDir, "workspace.before-0.3.2.json"),
+            fs.constants.COPYFILE_EXCL,
+          )
+          .catch((error: NodeJS.ErrnoException) => {
+            if (error.code !== "EEXIST") throw error;
+          });
+        await this.save();
       }
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "ENOENT")
@@ -686,6 +702,7 @@ export class AgentHost {
       w.pendingInput.clear();
       w.queue.close();
       w.query.close();
+      await w.query.return().catch(() => {});
       // Remove this worker's non-secret SDK caches, including policy identity metadata.
       // runtime is a unique directory created above, never a user-selected project path.
       await fs
@@ -758,9 +775,21 @@ export class AgentHost {
       if (e.type === "content_block_delta" && e.delta.type === "text_delta")
         this.streamText(w, s, `${w.messageId}:${e.index}`, e.delta.text);
     } else if (msg.type === "assistant") {
+      const eventId = `assistant:${msg.uuid}`;
+      if (w.seen.has(eventId)) return;
+      w.seen.add(eventId);
       msg.message.content.forEach((block, i) => {
-        const id = `${msg.message.id}:${i}`;
         if (block.type === "text") {
+          // SDK final messages can omit thinking blocks or contain just one
+          // completed block, so their array indexes are not stream indexes.
+          const streamed = [...w.raw].filter(([key]) =>
+            key.startsWith(`${msg.message.id}:`),
+          );
+          const matched =
+            streamed.find(([, text]) => text === block.text) ||
+            streamed.find(([key]) => key === `${msg.message.id}:${i}`) ||
+            streamed[0];
+          const id = matched?.[0] || `${msg.message.id}:final:${msg.uuid}:${i}`;
           const entry = s.entries.find((e) => e.id === id);
           if (entry) entry.text = this.vault.redact(block.text);
           else

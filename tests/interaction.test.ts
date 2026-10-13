@@ -67,6 +67,139 @@ function result(ids: string[], queued = 0): SDKMessage {
   } as SDKMessage;
 }
 
+function assistant(id: string, text: string, uuid = randomUUID()): SDKMessage {
+  return {
+    type: "assistant",
+    uuid,
+    session_id: "fixture",
+    parent_tool_use_id: null,
+    message: { id, content: [{ type: "text", text }] },
+  } as SDKMessage;
+}
+
+function stream(
+  f: Awaited<ReturnType<typeof fixture>>,
+  id: string,
+  index: number,
+  text: string,
+) {
+  f.host.message(f.session, f.worker, {
+    type: "stream_event",
+    event: { type: "message_start", message: { id } },
+  } as SDKMessage);
+  f.host.message(f.session, f.worker, {
+    type: "stream_event",
+    event: {
+      type: "content_block_delta",
+      index,
+      delta: { type: "text_delta", text },
+    },
+  } as SDKMessage);
+}
+
+test("final text replaces its streamed block when thinking changes the final array index", async () => {
+  const f = await fixture();
+  try {
+    stream(f, "msg_thinking", 1, "先看一下当前的状态。");
+    const final = assistant("msg_thinking", "先看一下当前的状态。");
+    f.host.message(f.session, f.worker, final);
+    f.host.message(f.session, f.worker, final);
+    assert.equal(f.session.entries.length, 1);
+    assert.equal(f.session.entries[0].id, "msg_thinking:1");
+    assert.equal(f.session.entries[0].text, "先看一下当前的状态。");
+    assert.equal(f.worker.raw.size, 0);
+  } finally {
+    await f.close();
+  }
+});
+
+test("separately finalized blocks and later messages may legitimately contain identical text", async () => {
+  const f = await fixture();
+  try {
+    stream(f, "msg_blocks", 1, "Repeated on purpose.");
+    f.host.message(
+      f.session,
+      f.worker,
+      assistant("msg_blocks", "Repeated on purpose."),
+    );
+    stream(f, "msg_blocks", 3, "Repeated on purpose.");
+    f.host.message(
+      f.session,
+      f.worker,
+      assistant("msg_blocks", "Repeated on purpose."),
+    );
+    stream(f, "msg_next", 1, "Repeated on purpose.");
+    f.host.message(
+      f.session,
+      f.worker,
+      assistant("msg_next", "Repeated on purpose."),
+    );
+    assert.deepEqual(
+      f.session.entries.map((entry) => entry.id),
+      ["msg_blocks:1", "msg_blocks:3", "msg_next:1"],
+    );
+    assert.ok(
+      f.session.entries.every((entry) => entry.text === "Repeated on purpose."),
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test("final messages without streaming remain distinct and replay safely", async () => {
+  const f = await fixture();
+  try {
+    const first = assistant("msg_no_stream", "First block.");
+    const second = assistant("msg_no_stream", "Second block.");
+    for (const message of [first, second, first, second])
+      f.host.message(f.session, f.worker, message);
+    assert.deepEqual(
+      f.session.entries.map((entry) => entry.text),
+      ["First block.", "Second block."],
+    );
+  } finally {
+    await f.close();
+  }
+});
+
+test("restore repairs only proven legacy duplicates and keeps an original workspace backup", async () => {
+  const f = await fixture();
+  const restored = new AgentHost(f.host.dataDir);
+  try {
+    const values = [
+      ["msg_old:1", "same"],
+      ["msg_old:0", "same"],
+      ["msg_other:0", "same"],
+      ["msg_real:0", "repeat"],
+      ["msg_real:1", "repeat"],
+      ["msg_different:1", "one"],
+      ["msg_different:0", "two"],
+    ];
+    for (const [id, text] of values)
+      f.host.add(f.session, "assistant", text, { id });
+    f.host.add(f.session, "user", "same");
+    await f.host.close();
+    await restored.init();
+    const entries = restored.get(f.session.id).entries;
+    assert.equal(entries.length, 7);
+    assert.ok(!entries.some((entry) => entry.id === "msg_old:0"));
+    assert.equal(entries.filter((entry) => entry.text === "repeat").length, 2);
+    assert.equal(entries.at(-1)?.kind, "user");
+    const backup = JSON.parse(
+      await fs.readFile(
+        path.join(f.host.dataDir, "workspace.before-0.3.2.json"),
+        "utf8",
+      ),
+    );
+    assert.equal(backup.sessions[0].entries.length, 8);
+    await restored.init();
+    assert.equal(restored.get(f.session.id).entries.length, 7);
+  } finally {
+    await restored.close();
+    await f.close();
+  }
+});
+
 test("stop during initial startup cannot launch a worker or send input afterwards", async () => {
   const f = await fixture();
   let release!: () => void;
