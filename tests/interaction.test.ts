@@ -68,6 +68,69 @@ function result(ids: string[], queued = 0): SDKMessage {
   } as SDKMessage;
 }
 
+test("a zeroed SDK error result cannot erase usage already reported in the same worker", async () => {
+  const f = await fixture();
+  try {
+    f.worker.baseline = { input: 50, output: 10, cost: 0.1 };
+    const cumulative = {
+      ...result([]),
+      total_cost_usd: 0.12,
+      modelUsage: {
+        test: {
+          inputTokens: 100,
+          cacheReadInputTokens: 20,
+          cacheCreationInputTokens: 40,
+          outputTokens: 30,
+          webSearchRequests: 0,
+          costUSD: 0.12,
+          contextWindow: 200000,
+          maxOutputTokens: 8192,
+        },
+      },
+    } as SDKMessage;
+    f.host.message(f.session, f.worker, cumulative);
+    const before = { ...f.session.usage };
+    assert.equal(before.input, 210);
+    assert.equal(before.output, 40);
+    // SDK result totals are cumulative, so replaying them must not double count.
+    f.host.message(f.session, f.worker, cumulative);
+    assert.deepEqual(f.session.usage, before);
+    f.host.message(f.session, f.worker, {
+      ...result([]),
+      subtype: "error_during_execution",
+      is_error: true,
+      errors: ["Connection lost"],
+      modelUsage: {},
+      total_cost_usd: 0,
+    } as SDKMessage);
+    assert.equal(f.session.phase, "error");
+    assert.deepEqual(f.session.usage, before);
+    // An error with real cumulative usage must still count its billed work.
+    f.host.message(f.session, f.worker, {
+      ...result([]),
+      subtype: "error_during_execution",
+      is_error: true,
+      errors: ["Task failed after model work"],
+      total_cost_usd: 0.5,
+      modelUsage: {
+        test: {
+          inputTokens: 200,
+          cacheReadInputTokens: 20,
+          cacheCreationInputTokens: 40,
+          outputTokens: 60,
+          webSearchRequests: 0,
+          costUSD: 0.5,
+          contextWindow: 200000,
+          maxOutputTokens: 8192,
+        },
+      },
+    } as SDKMessage);
+    assert.deepEqual(f.session.usage, { input: 310, output: 70, cost: 0.6 });
+  } finally {
+    await f.close();
+  }
+});
+
 function assistant(id: string, text: string, uuid = randomUUID()): SDKMessage {
   return {
     type: "assistant",

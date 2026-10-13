@@ -57,14 +57,12 @@ export class ImageStore {
       const info = await decoder.metadata();
       if (!["png", "jpeg", "webp", "gif"].includes(info.format || ""))
         throw new Error("format");
-      const normalized = decoder
-        .rotate()
-        .resize({
-          width: 2560,
-          height: 2560,
-          fit: "inside",
-          withoutEnlargement: true,
-        });
+      const normalized = decoder.rotate().resize({
+        width: 2560,
+        height: 2560,
+        fit: "inside",
+        withoutEnlargement: true,
+      });
       const result = await normalized
         .png()
         .toBuffer({ resolveWithObject: true });
@@ -176,8 +174,18 @@ export class ImageStore {
       });
       // Keep a bounded recent visual context; the new request's images take priority.
       const remaining = MAX_IMAGES - images.length;
+      const included = new Set(images.map((image) => image.attachment.id));
       const selected = remaining
-        ? previous.flatMap((entry) => entry.images || []).slice(-remaining)
+        ? previous
+            .flatMap((entry) => entry.images || [])
+            .slice(-remaining)
+            .filter((image) => {
+              // A reused ID always points to the same immutable pixels. Keep all
+              // historical text, but transmit that attachment only once.
+              if (included.has(image.id)) return false;
+              included.add(image.id);
+              return true;
+            })
         : [];
       if (previous.some((entry) => entry.images?.length))
         blocks.push({

@@ -102,15 +102,13 @@ test("restore carries recent historical pixels with labels, prioritizes current 
     const refs = await Promise.all(
       Array.from({ length: 6 }, (_, i) => f.images.upload(input, `${i}.png`)),
     );
-    const previous: Entry[] = refs
-      .slice(0, 5)
-      .map((image, i) => ({
-        id: String(i),
-        kind: "user",
-        text: `request ${i}`,
-        time: i,
-        images: [image],
-      }));
+    const previous: Entry[] = refs.slice(0, 5).map((image, i) => ({
+      id: String(i),
+      kind: "user",
+      text: `request ${i}`,
+      time: i,
+      images: [image],
+    }));
     const current = await f.images.resolve([refs[5].id]);
     const prompt = await f.images.prompt("latest request", current, previous);
     assert.ok(Array.isArray(prompt));
@@ -139,6 +137,40 @@ test("restore carries recent historical pixels with labels, prioritizes current 
     await f.images.prune(new Set([refs[5].id]));
     assert.equal((await fs.readdir(f.images.directory)).length, 1);
     assert.equal((await f.images.read(refs[5].id)).attachment.id, refs[5].id);
+  } finally {
+    await f.close();
+  }
+});
+
+test("restore includes a reused attachment only once, including when it is attached to the current request", async () => {
+  const f = await fixture();
+  try {
+    const image = await f.images.upload(
+      await pixels().png().toBuffer(),
+      "reused.png",
+    );
+    const previous: Entry[] = Array.from({ length: 5 }, (_, i) => ({
+      id: String(i),
+      kind: "user",
+      text: `request ${i}`,
+      time: i,
+      images: [image],
+    }));
+    for (const current of [[], await f.images.resolve([image.id])]) {
+      const prompt = await f.images.prompt("continue", current, previous);
+      assert.ok(Array.isArray(prompt));
+      assert.equal(
+        prompt.filter((block) => block.type === "image").length,
+        1,
+        "Restoring the same immutable attachment must not resend its pixels repeatedly",
+      );
+      assert.ok(
+        prompt.some(
+          (block) => block.type === "text" && block.text.includes("request 0"),
+        ),
+      );
+      if (current.length) assert.equal(prompt.at(-1)?.type, "image");
+    }
   } finally {
     await f.close();
   }

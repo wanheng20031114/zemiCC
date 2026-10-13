@@ -863,11 +863,16 @@ export class AgentHost {
           usage.cacheCreationInputTokens;
         output += usage.outputTokens;
       }
-      s.usage = {
-        input: w.baseline.input + input,
-        output: w.baseline.output + output,
-        cost: w.baseline.cost + (msg.total_cost_usd || 0),
-      };
+      // The SDK may emit zeroed totals on a crash/startup error. Those are not
+      // a new accounting baseline and must not erase already reported usage.
+      const missingUsage =
+        msg.is_error && input === 0 && output === 0 && !msg.total_cost_usd;
+      if (!missingUsage)
+        s.usage = {
+          input: w.baseline.input + input,
+          output: w.baseline.output + output,
+          cost: w.baseline.cost + (msg.total_cost_usd || 0),
+        };
       if (msg.is_error)
         this.add(
           s,
