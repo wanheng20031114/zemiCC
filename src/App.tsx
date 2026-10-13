@@ -50,6 +50,7 @@ import type {
 } from "../shared/types";
 import { MODELS } from "../shared/types";
 import { api, bootstrap } from "./api";
+import { useZoom } from "./useZoom";
 
 const basename = (p: string) =>
   p.split(/[\\/]/).filter(Boolean).at(-1) || "选择项目";
@@ -708,7 +709,7 @@ function Inspector({
       </div>
       <div className="inspector-footer">
         <div>
-          <span>上下文用量</span>
+          <span>累计输入</span>
           <span>
             {compact(session?.usage.input || 0)}{" "}
             <span className="muted">tokens</span>
@@ -809,6 +810,7 @@ function Hero({
 }
 
 export default function App() {
+  const { zoom, change: changeZoom, browserZoomed } = useZoom();
   const [state, setState] = useState<Snapshot>({
     project: "",
     connected: false,
@@ -943,7 +945,9 @@ export default function App() {
     .filter((s) => !state.project || s.project === state.project)
     .filter((s) => s.title.toLowerCase().includes(filter.toLowerCase()));
   return (
-    <div className={`app ${inspector ? "" : "inspector-hidden"}`}>
+    <div
+      className={`app ${inspector ? "" : "inspector-hidden"} ${browserZoomed ? "browser-zoomed" : ""}`}
+    >
       <aside className="sidebar">
         <div className="brand">
           <Mark />
@@ -1066,6 +1070,30 @@ export default function App() {
             <span>{current ? current.title : "新的对话"}</span>
           </div>
           <div className="topbar-actions">
+            <div className="zoom-controls" role="group" aria-label="界面缩放">
+              <IconButton
+                label="缩小界面 · Ctrl −"
+                onClick={() => changeZoom(zoom - 0.1)}
+                disabled={zoom <= 0.8}
+              >
+                <span className="zoom-symbol">−</span>
+              </IconButton>
+              <button
+                className="zoom-reset"
+                title="恢复默认大小 · Ctrl 0"
+                aria-label="恢复默认缩放"
+                onClick={() => changeZoom(1)}
+              >
+                {Math.round(zoom * 100)}%
+              </button>
+              <IconButton
+                label="放大界面 · Ctrl +"
+                onClick={() => changeZoom(zoom + 0.1)}
+                disabled={zoom >= 1.8}
+              >
+                <Plus size={17} />
+              </IconButton>
+            </div>
             {current && (
               <span className={`phase-label ${current.phase}`}>
                 <span className={busy ? "spinner" : "status-dot online"} />

@@ -67,33 +67,32 @@ export async function safePath(
   const resolved = path.resolve(realRoot, requested);
   if (path.relative(realRoot, resolved).includes(":"))
     throw new Error("不允许访问备用数据流");
-  if (
-    !contained(realRoot, resolved) ||
-    privatePath(path.relative(realRoot, resolved))
-  )
+  if (privatePath(path.relative(realRoot, resolved)))
     throw new Error("此路径不在可访问的项目范围内");
-  // Resolve every existing ancestor, including junctions, even for a new file.
+  // Canonicalize before comparing: Windows may give us an 8.3 alias for the
+  // same directory. For new files, resolve the nearest existing ancestor so
+  // junctions and symlinks cannot bypass the project boundary.
   let existing = resolved;
   while (true) {
     try {
       const real = await fs.realpath(existing);
+      const canonical = path.resolve(real, path.relative(existing, resolved));
       if (
-        !contained(realRoot, real) ||
-        privatePath(path.relative(realRoot, real))
+        !contained(realRoot, canonical) ||
+        privatePath(path.relative(realRoot, canonical))
       )
         throw new Error("不允许访问项目外的链接或敏感目录");
-      break;
+      return canonical;
     } catch (e) {
       if (
         !allowMissing ||
         (e as NodeJS.ErrnoException).code !== "ENOENT" ||
-        existing === realRoot
+        path.dirname(existing) === existing
       )
         throw e;
       existing = path.dirname(existing);
     }
   }
-  return resolved;
 }
 
 export function createAccessGuard(port: () => number) {

@@ -10,7 +10,7 @@
   --accent: #667550;
   --sidebar: #252c26;
   --mark-ink: #303a29;
-  font-size: 13px;
+  font-size: 15px;
 }
 * {
   box-sizing: border-box;
@@ -124,13 +124,13 @@ textarea {
   flex: 1;
 }
 .project-switch small {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
   color: #919b89;
 }
 .project-switch strong {
   font-weight: 500;
-  font-size: 13px;
+  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -155,7 +155,7 @@ textarea {
   background: #333b30;
 }
 .new-session kbd {
-  font-size: 10px;
+  font-size: 12px;
   margin-left: auto;
   border: 1px solid #4c5446;
   padding: 2px 4px;
@@ -168,7 +168,7 @@ textarea {
   justify-content: space-between;
   margin: 30px 9px 9px;
   color: #7f8a77;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
 }
 .icon-button {
@@ -221,7 +221,7 @@ textarea {
   min-width: 0;
   padding: 10px;
   text-align: left;
-  font-size: 12px;
+  font-size: 14px;
 }
 .session-main > span:first-of-type {
   overflow: hidden;
@@ -242,7 +242,7 @@ textarea {
 .no-sessions {
   margin: 24px 12px;
   color: #76826c;
-  font-size: 11px;
+  font-size: 13px;
 }
 .conversation-line {
   display: block;
@@ -276,7 +276,7 @@ textarea {
   gap: 7px;
   align-items: center;
   color: #8b9780;
-  font-size: 10px;
+  font-size: 12px;
   padding: 0 10px 17px;
   border-bottom: 1px solid #3a4432;
 }
@@ -326,10 +326,10 @@ textarea {
 .connection-button strong {
   font-weight: 500;
   color: #dce3d0;
-  font-size: 12px;
+  font-size: 14px;
 }
 .connection-button small {
-  font-size: 10px;
+  font-size: 12px;
   color: #88967d;
 }
 .connection-button > svg {
@@ -366,7 +366,7 @@ textarea {
   gap: 13px;
   align-items: center;
   min-width: 0;
-  font-size: 11px;
+  font-size: 13px;
   color: #949b8d;
 }
 .breadcrumbs > span:last-child {
@@ -389,7 +389,7 @@ textarea {
   gap: 17px;
 }
 .sdk-tag {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.3px;
   color: #8f9986;
   border: 1px solid #e0e5d6;
@@ -401,7 +401,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 12px;
   color: #8f9986;
   white-space: nowrap;
 }
@@ -521,7 +521,7 @@ textarea {
 }
 .eyebrow {
   letter-spacing: 2.9px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 500;
   color: #9ba58f;
   margin-top: 0;
@@ -536,7 +536,7 @@ textarea {
   line-height: 1.5;
 }
 .hero-subtitle {
-  font-size: 12px;
+  font-size: 14px;
   color: #929c87;
   line-height: 1.9;
   text-align: center;
@@ -597,10 +597,10 @@ textarea {
 .starter-copy strong {
   font-weight: 500;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 14px;
 }
 .starter-copy > span {
-  font-size: 9px;
+  font-size: 12px;
   color: #9aa48e;
   white-space: nowrap;
 }
@@ -637,14 +637,14 @@ textarea {
   resize: none;
   border: 0;
   background: transparent;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.75;
   height: 105px;
   outline: none;
 }
 .composer textarea::placeholder {
   color: #a5ad9b;
-  font-size: 12px;
+  font-size: 14px;
   letter-spacing: 0.3px;
 }
 .composer textarea:focus-visible {
@@ -685,7 +685,7 @@ textarea {
   appearance: none;
   border: 0;
   background: transparent;
-  font-size: 10px;
+  font-size: 12px;
   color: #798669;
   padding: 2px 14px 2px 0;
   cursor: pointer;
@@ -701,7 +701,7 @@ textarea {
   align-items: center;
   gap: 5px;
   color: #9eaa8e;
-  font-size: 9px;
+  font-size: 12px;
   margin-right: 7px;
 }
 .send-button {
@@ -731,7 +731,7 @@ textarea {
   justify-content: space-between;
   padding: 11px 3px 0;
   color: #aab29f;
-  font-size: 9px;
+  font-size: 12px;
 }
 .composer-caption > span {
   display: flex;
@@ -752,7 +752,7 @@ textarea {
   justify-content: center;
   gap: 12px;
   color: #b1b9a5;
-  font-size: 10px;
+  font-size: 12px;
   margin: 4px 0 32px;
 }
 .session-date > span {
@@ -777,7 +777,7 @@ textarea {
   border-radius: 12px 12px 3px 12px;
   max-width: 86%;
   color: #536443;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.9;
 }
 .message.user p {
@@ -791,7 +791,7 @@ textarea {
   margin-top: 3px;
 }
 .message.assistant .message-content {
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.9;
   min-width: 0;
   flex: 1;
@@ -822,7 +822,7 @@ textarea {
   border-radius: 8px;
   padding: 16px;
   overflow: auto;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
   color: #546343;
 }
@@ -840,7 +840,7 @@ textarea {
 .message-content table {
   border-collapse: collapse;
   width: 100%;
-  font-size: 11px;
+  font-size: 13px;
 }
 .message-content th,
 .message-content td {
@@ -867,7 +867,7 @@ textarea {
   align-items: center;
   padding: 9px 11px;
   width: 100%;
-  font-size: 10px;
+  font-size: 12px;
   text-align: left;
   color: #869776;
 }
@@ -894,7 +894,7 @@ textarea {
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.6;
   color: #76896a;
 }
@@ -909,7 +909,7 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: #99a68c;
   margin: 23px 0;
 }
@@ -933,7 +933,7 @@ textarea {
   animation-delay: 0.4s;
 }
 .working-indicator small {
-  font-size: 10px;
+  font-size: 12px;
   color: #9cab8d;
   margin-left: 8px;
 }
@@ -955,12 +955,12 @@ textarea {
   margin: 20px 0 20px 39px;
 }
 .error-card > span {
-  font-size: 11px;
+  font-size: 13px;
   color: #9e7859;
   font-weight: 600;
 }
 .error-card p {
-  font-size: 11px;
+  font-size: 13px;
   white-space: pre-wrap;
   line-height: 1.7;
   color: #a48971;
@@ -983,7 +983,7 @@ textarea {
   align-items: center;
   padding: 25px 21px 20px;
   color: #748362;
-  font-size: 11px;
+  font-size: 13px;
 }
 .inspector-heading svg {
   color: #9bab87;
@@ -1012,7 +1012,7 @@ textarea {
   white-space: nowrap;
 }
 .project-card-path {
-  font-size: 9px;
+  font-size: 12px;
   color: #a5b194;
   direction: rtl;
   text-align: left;
@@ -1026,7 +1026,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 12px;
   color: #8a9d71;
   background: #eaf0df;
   border: 1px solid #e2e9d5;
@@ -1046,7 +1046,7 @@ textarea {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 10px;
+  font-size: 12px;
   color: #a0ae8d;
   padding: 10px 7px;
   border-bottom: 2px solid transparent;
@@ -1056,7 +1056,7 @@ textarea {
   border-color: #8da46b;
 }
 .inspector-tabs button span {
-  font-size: 8px;
+  font-size: 12px;
   background: #dfe8cc;
   border-radius: 5px;
   min-width: 15px;
@@ -1074,7 +1074,7 @@ textarea {
   justify-content: space-between;
   padding: 9px 13px 4px 23px;
   color: #a9b798;
-  font-size: 9px;
+  font-size: 12px;
 }
 .inspector-subheading .icon-button {
   width: 25px;
@@ -1089,7 +1089,7 @@ textarea {
   padding-bottom: 7px;
   padding-right: 16px;
   width: 100%;
-  font-size: 10px;
+  font-size: 12px;
   color: #82956e;
 }
 .tree-row > svg:nth-last-of-type(1) {
@@ -1117,7 +1117,7 @@ textarea {
 .inspector-footer > div:not(.local-note) {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 12px;
   color: #a3b191;
   margin-bottom: 12px;
 }
@@ -1133,7 +1133,7 @@ textarea {
   align-items: center;
   gap: 6px;
   color: #a6b896;
-  font-size: 9px;
+  font-size: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
@@ -1148,7 +1148,7 @@ textarea {
 .panel-empty {
   padding: 18px;
   color: #a7b799;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.8;
 }
 .changes-list {
@@ -1158,7 +1158,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: 12px;
   color: #81966b;
   padding: 9px;
   width: 100%;
@@ -1175,7 +1175,7 @@ textarea {
   white-space: nowrap;
 }
 .change-status {
-  font-size: 8px;
+  font-size: 12px;
   color: #859f63;
   background: #e3edcf;
   padding: 3px;
@@ -1193,7 +1193,7 @@ textarea {
   color: #abbc95;
 }
 .changes-empty p {
-  font-size: 10px;
+  font-size: 12px;
   color: #a4b58f;
 }
 .modal {
@@ -1226,7 +1226,7 @@ textarea {
   color: #465b33;
 }
 .modal-heading p {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.8;
   color: #96a785;
   margin: 8px 0 0;
@@ -1272,7 +1272,7 @@ textarea {
 }
 .field-label {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   margin: 18px 0 10px;
   color: #849b6c;
 }
@@ -1294,7 +1294,7 @@ textarea {
   padding: 13px 0;
   border: 0;
   width: 100%;
-  font-size: 12px;
+  font-size: 14px;
   outline: none;
 }
 .input-wrap input:focus-visible {
@@ -1304,7 +1304,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 9px;
+  font-size: 12px;
   color: #95aa7c;
   margin: 14px 0 23px;
 }
@@ -1316,7 +1316,7 @@ textarea {
   gap: 9px;
   border-radius: 8px;
   padding: 11px 16px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
 }
 .primary {
@@ -1344,7 +1344,7 @@ textarea {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  font-size: 10px;
+  font-size: 12px;
   color: #819c61;
 }
 .disconnect {
@@ -1352,14 +1352,14 @@ textarea {
   margin: 18px auto 0;
 }
 .modal-footnote {
-  font-size: 9px;
+  font-size: 12px;
   color: #a0b38b;
   margin: 24px 0 0;
   line-height: 1.9;
   text-align: center;
 }
 .form-error {
-  font-size: 10px;
+  font-size: 12px;
   color: #b18662;
   line-height: 1.7;
 }
@@ -1373,7 +1373,7 @@ textarea {
   padding: 23px 18px;
   background: #f1f6e8;
   color: #9bb27c;
-  font-size: 12px;
+  font-size: 14px;
 }
 .folder-pick span {
   color: #7f9862;
@@ -1386,7 +1386,7 @@ textarea {
   border-radius: 7px;
   background: #fffffa;
   padding: 12px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .approval-card {
   margin: 22px 0 22px 39px;
@@ -1400,23 +1400,23 @@ textarea {
   align-items: center;
   gap: 8px;
   color: #9a865e;
-  font-size: 11px;
+  font-size: 13px;
 }
 .approval-title strong {
   font-weight: 500;
 }
 .approval-title > span {
-  font-size: 9px;
+  font-size: 12px;
   margin-left: auto;
   color: #b4a280;
 }
 .approval-card > p {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.8;
   color: #a29271;
 }
 .approval-card > pre {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1448,7 +1448,7 @@ textarea {
   margin-top: 20px;
 }
 .question legend {
-  font-size: 12px;
+  font-size: 14px;
   color: #8f7c55;
   line-height: 1.8;
 }
@@ -1461,7 +1461,7 @@ textarea {
 .question-options button {
   border: 1px solid #dfd5bd;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 12px;
   padding: 8px 10px;
   display: flex;
   gap: 6px;
@@ -1483,7 +1483,7 @@ textarea {
 .preview-toolbar {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 12px;
   color: #a1b38c;
   margin-bottom: 14px;
 }
@@ -1494,7 +1494,7 @@ textarea {
   border-radius: 8px;
   overflow: auto;
   max-height: 55vh;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
   margin: 0;
   font-family: "Cascadia Code", Consolas, monospace;
@@ -1510,7 +1510,7 @@ textarea {
   flex-shrink: 0;
   text-align: right;
   padding-right: 16px;
-  font-size: 9px;
+  font-size: 12px;
   color: #b1c39a;
   user-select: none;
 }
@@ -1541,14 +1541,14 @@ textarea {
   border-radius: 10px;
   box-shadow: 0 8px 30px #3c492a20;
   max-width: 650px;
-  font-size: 11px;
+  font-size: 13px;
   z-index: 100;
 }
 .danger {
   background: #ac8765 !important;
 }
 .image-placeholder {
-  font-size: 11px;
+  font-size: 13px;
   color: #a0b38a;
 }
 .inspector-hidden .hero {
@@ -1599,7 +1599,7 @@ textarea {
     display: none;
   }
   .starter-copy > span {
-    font-size: 8px;
+    font-size: 12px;
   }
   .starter-icon {
     width: 25px;
@@ -1633,7 +1633,7 @@ textarea {
     gap: 10px;
   }
   .starter-copy > span {
-    font-size: 9px;
+    font-size: 12px;
   }
   .starter-card > svg {
     display: block;
@@ -1693,10 +1693,10 @@ textarea {
     margin: 15px 0 10px;
   }
   .eyebrow {
-    font-size: 7px;
+    font-size: 12px;
   }
   .hero-subtitle {
-    font-size: 11px;
+    font-size: 13px;
   }
   .starter-grid {
     gap: 7px;
@@ -1709,7 +1709,7 @@ textarea {
     text-align: center;
   }
   .starter-copy strong {
-    font-size: 10px;
+    font-size: 12px;
   }
   .starter-copy > span,
   .starter-card > svg {
@@ -1733,7 +1733,7 @@ textarea {
     padding: 0 16px;
   }
   .breadcrumbs {
-    font-size: 10px;
+    font-size: 12px;
     gap: 9px;
   }
   .topbar-actions {
@@ -1751,10 +1751,10 @@ textarea {
   }
   .message.user .message-content {
     max-width: 94%;
-    font-size: 12px;
+    font-size: 14px;
   }
   .message.assistant .message-content {
-    font-size: 12px;
+    font-size: 14px;
   }
   .tool-entry,
   .approval-card,
@@ -1836,5 +1836,91 @@ textarea {
   color: #919e83;
 }
 .new-session kbd {
-  font-size: 9px;
+  font-size: 12px;
+}
+.app {
+  zoom: var(--browser-zoom, 1);
+  height: calc(100dvh / var(--browser-zoom, 1));
+}
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid #dce3d1;
+  border-radius: 8px;
+  padding: 2px;
+  background: #fcfdf8;
+}
+.zoom-controls .icon-button {
+  width: 29px;
+  height: 28px;
+  color: #6d7d5c;
+}
+.zoom-symbol {
+  font-size: 21px;
+  line-height: 1;
+}
+.zoom-reset {
+  font-size: 12px;
+  color: #738463;
+  width: 44px;
+  padding: 4px 0;
+  font-variant-numeric: tabular-nums;
+}
+.zoom-reset:hover {
+  color: #3d522b;
+}
+.browser-zoomed .inspector {
+  display: none;
+}
+.hero-subtitle {
+  color: #728365;
+}
+.starter-copy > span {
+  color: #798b6b;
+}
+.composer-caption,
+.project-card-path {
+  color: #7d8f70;
+}
+.permission-chip {
+  color: #81966b;
+}
+.composer textarea {
+  height: 113px;
+}
+.message.assistant .message-content {
+  font-size: 15px;
+  line-height: 1.95;
+}
+.topbar-actions {
+  gap: 12px;
+}
+@media (max-width: 1260px) {
+  .sdk-tag {
+    display: none;
+  }
+  .starter-card {
+    padding: 15px 9px;
+  }
+  .starter-copy > span {
+    font-size: 11px;
+  }
+}
+@media (max-width: 720px) {
+  .zoom-controls {
+    gap: 0;
+    padding: 1px;
+  }
+  .zoom-controls .icon-button {
+    width: 24px;
+  }
+  .zoom-reset {
+    width: 39px;
+    font-size: 11px;
+  }
+  .breadcrumbs > span:last-child,
+  .breadcrumbs > svg {
+    display: none;
+  }
 }

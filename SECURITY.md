@@ -17,7 +17,7 @@ zemiCC is a local, single-user coding tool. It is not designed for network hosti
 - Exact Host and Origin checks reject DNS rebinding and cross-origin calls. No permissive CORS.
 - A random per-process capability protects the API. Mutations require a header; reads and SSE use an HttpOnly SameSite cookie. The bootstrap endpoint requires a custom header.
 - CSP, frame denial, request size limits, plain text file previews and Markdown without raw HTML reduce browser attack surface. Remote model-supplied images do not load.
-- Electron uses an in-memory browser partition, disabled HTTP cache, sandboxed renderers, context isolation, no Node integration and no webview. External navigation stays outside the app.
+- Electron uses an in-memory browser partition, disabled HTTP cache, sandboxed renderers, context isolation, no Node integration and no webview. Its narrow preload bridge exposes only display zoom; IPC validates the sender and numeric bounds. External navigation stays outside the app.
 
 ## Agent operations
 
@@ -29,6 +29,6 @@ Each SDK worker has a 40-turn task limit and a USD 5 estimated spend cap for its
 
 ## Local data
 
-`.zemicc/` contains project paths, redacted conversations and non-secret SDK runtime metadata. It is ignored by Git. Session deletion removes the app's current record but is not secure deletion of disk sectors, backups or SDK runtime metadata. Project source and conversations may be sent to Anthropic when the user starts a task. No project content is published to GitHub by the app.
+`.zemicc/` contains project paths and redacted conversations. Each SDK worker gets a separate temporary runtime directory; its non-secret caches and policy identity metadata are removed when the worker closes. A forced process crash can leave that temporary metadata behind, but API keys are not written there. The entire directory is ignored by Git. Session deletion removes the app's current record but is not secure deletion of disk sectors or backups. Project source and conversations may be sent to Anthropic when the user starts a task. No project content is published to GitHub by the app.
 
 Report reproducible security issues privately to the repository owner, without attaching live credentials or private conversations.

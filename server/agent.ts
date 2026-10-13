@@ -47,6 +47,7 @@ type Worker = {
   messageId: string;
   seen: Set<string>;
   done?: Promise<void>;
+  runtime: string;
 };
 export class AgentHost {
   readonly vault = new CredentialVault();
@@ -316,8 +317,7 @@ export class AgentHost {
     }
     const queue = new PromptQueue(),
       abort = new AbortController();
-    const runtime = path.join(this.dataDir, "sdk-runtime");
-    await fs.mkdir(runtime, { recursive: true });
+    const runtime = await fs.mkdtemp(path.join(this.dataDir, "sdk-session-"));
     const q = query({
       prompt: queue,
       options: {
@@ -393,6 +393,7 @@ export class AgentHost {
       queue,
       abort,
       baseline: { ...s.usage },
+      runtime,
       raw: new Map(),
       messageId: "",
       seen: new Set(),
@@ -454,6 +455,17 @@ export class AgentHost {
     } finally {
       w.queue.close();
       w.query.close();
+      // Remove this worker's non-secret SDK caches, including policy identity metadata.
+      // runtime is a unique directory created above, never a user-selected project path.
+      await fs
+        .rm(w.runtime, { recursive: true, force: true, maxRetries: 3 })
+        .catch(() => {
+          this.add(
+            s,
+            "notice",
+            "临时 SDK 数据清理失败，请退出后检查本地数据目录。",
+          );
+        });
       if (this.workers.get(s.id) === w) this.workers.delete(s.id);
       for (const [id, item] of this.pending)
         if (item.sessionId === s.id) {

@@ -39,9 +39,23 @@ test("path guards reject traversal, secrets and symlink ancestors of new files",
   await fs.mkdir(project);
   await fs.mkdir(outside);
   await fs.writeFile(path.join(project, "ok.ts"), "export {}");
-  assert.equal(await safePath(project, "ok.ts"), path.join(project, "ok.ts"));
+  const canonicalProject = await fs.realpath(project);
+  assert.equal(
+    await safePath(project, "ok.ts"),
+    await fs.realpath(path.join(project, "ok.ts")),
+  );
+  // os.tmpdir() can contain a short Windows alias (RUNNER~1 on CI).
+  assert.equal(
+    await safePath(
+      canonicalProject,
+      path.join(project, "new", "output.ts"),
+      true,
+    ),
+    path.join(canonicalProject, "new", "output.ts"),
+  );
   await assert.rejects(safePath(project, "../outside/a.ts", true));
   await assert.rejects(safePath(project, ".env", true));
+  await assert.rejects(safePath(project, "ok.ts:secret", true));
   await fs.symlink(
     outside,
     path.join(project, "escape"),
@@ -50,6 +64,14 @@ test("path guards reject traversal, secrets and symlink ancestors of new files",
   await assert.rejects(safePath(project, "escape/new.ts", true));
   // Remove only the known test-created link; never recursively follow a junction.
   await fs.unlink(path.join(project, "escape"));
+  await fs.mkdir(path.join(project, ".claude"));
+  await fs.symlink(
+    path.join(project, ".claude"),
+    path.join(project, "private-link"),
+    process.platform === "win32" ? "junction" : "dir",
+  );
+  await assert.rejects(safePath(project, "private-link/new.ts", true));
+  await fs.unlink(path.join(project, "private-link"));
   await fs.rm(dir, { recursive: true, force: true });
 });
 test("SDK environment excludes host credentials and gateway overrides", () => {
@@ -73,7 +95,7 @@ test("writes wait for explicit approval, deny works and cancellation clears pend
     { file_path: path.join(dir, "new.txt"), content: "test" },
     abort.signal,
   );
-  await new Promise((r) => setTimeout(r, 60));
+  await waitFor(() => s.phase === "approval");
   assert.equal(s.phase, "approval");
   await host.decide(s.id, s.approvals[0].id, { allow: false });
   assert.equal((await pending).behavior, "deny");
@@ -83,10 +105,18 @@ test("writes wait for explicit approval, deny works and cancellation clears pend
     { command: "echo test" },
     abort.signal,
   );
-  await new Promise((r) => setTimeout(r, 10));
+  await waitFor(() => s.approvals.length === 1);
   abort.abort();
   assert.equal((await next).behavior, "deny");
   assert.equal(s.approvals.length, 0);
   await host.close();
   await fs.rm(dir, { recursive: true, force: true });
 });
+
+async function waitFor(predicate: () => boolean) {
+  const deadline = Date.now() + 5000;
+  while (!predicate()) {
+    assert.ok(Date.now() < deadline, "approval did not become available");
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}
