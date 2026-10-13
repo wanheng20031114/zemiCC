@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-server/
+.zemicc/
+.env
+.env.*
+*.log
+coverage/
+release/
+.DS_Store
+Thumbs.db
