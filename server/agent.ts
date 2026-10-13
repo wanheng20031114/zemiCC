@@ -415,8 +415,6 @@ export class AgentHost {
           "TodoWrite",
           "AskUserQuestion",
         ],
-        maxTurns: 40,
-        maxBudgetUsd: 5,
         systemPrompt: {
           type: "preset",
           preset: "claude_code",

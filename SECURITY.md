@@ -29,7 +29,7 @@ The optional **manual** mode requests review for file writes, content searches a
 
 Arbitrary shell commands are not sandboxed and can access disk, process credentials and the network after either automatic or human approval. The classifier can make mistakes, and code invoked by a seemingly routine build/test can have arbitrary side effects. Project file-path checks do not constrain shell processes or every file reached by recursive search. Use auto mode only for projects you trust; it is not a guarantee that all dangerous actions will be caught. New tools and external integrations are not enabled implicitly.
 
-Each SDK worker has a 40-turn task limit and a USD 5 query-budget option for its lifetime. SDK usage estimates and this budget may exclude separate permission-classifier calls, so neither is a complete billing statement or total-spend guarantee. Stopping a worker is best effort and cannot undo completed side effects or necessarily stop processes deliberately detached by an approved command. The agent is instructed not to detach processes.
+zemiCC does not impose a turn limit or a monetary cutoff: SDK queries omit both `maxTurns` and `maxBudgetUsd`. Long tasks can continue without an app-defined cap, and users can stop them at any time. Provider quotas, rate limits, context handling and network failures still apply. API charges accrue with use; SDK usage estimates may exclude separate permission-classifier calls and are not a complete billing statement. Stopping a worker is best effort and cannot undo completed side effects or necessarily stop processes deliberately detached by an approved command. The agent is instructed not to detach processes.
 
 ## Local data
 

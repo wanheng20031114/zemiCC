@@ -27,11 +27,13 @@ Windows 10/11 x64 用户请从 [GitHub Releases](https://github.com/wanheng20031
 
 命令审核使用官方 SDK 的 [`auto` 权限模式](https://code.claude.com/docs/en/permission-modes#eliminate-permission-prompts-with-auto-mode)。如账户、模型或服务暂不支持，会显示降级提示并对命令请求确认。自动审核模型可能产生额外 API 费用，界面的费用估算不包含所有审核调用。
 
+长任务不设应用层轮数或金额上限。zemiCC 不传入 SDK 的 `maxTurns` 或 `maxBudgetUsd`，任务可持续执行；你可以随时点击停止。API 服务的额度、速率限制及网络错误仍可能中断执行，费用按实际使用产生。
+
 右上角 `− / 100% / +` 可缩放整个界面（80%–180%）。也支持 `Ctrl + +`、`Ctrl + =`、`Ctrl + −` 和 `Ctrl + 0` 复位；macOS 使用 Command。
 
 ## 已实现
 
-- 真实 Claude Agent SDK 工具循环、流式回复、停止生成、多轮对话。
+- 真实 Claude Agent SDK 工具循环、流式回复、停止生成、多轮对话，无应用层轮数或金额截断。
 - Opus 5.5 / Haiku 5.5 模型选择（可用性和额度由你的 API 账户决定）。
 - 自动 / 逐次确认权限模式，高风险操作说明，支持 Agent 的选择题与自由回答。
 - 项目文件树、文本预览、Git 状态和差异预览。
