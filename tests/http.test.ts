@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { startServer } from "../server/index.js";
+import sharp from "sharp";
 
 test("local API authenticates, blocks hostile origins, clears credentials and does not persist them", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "zemicc-http-test-"));
@@ -109,6 +110,85 @@ test("local API authenticates, blocks hostile origins, clears credentials and do
     assert.equal(state.connected, false);
     const saved = await fs.readFile(path.join(dir, "workspace.json"), "utf8");
     assert.ok(!saved.includes(key));
+  } finally {
+    await server.close();
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("image uploads and reads require the existing local capability and reject hostile content", async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "zemicc-image-http-"));
+  const server = await startServer({ port: 0, dataDir: dir });
+  try {
+    const png = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: "blue" },
+    })
+      .png()
+      .toBuffer();
+    const body = new Uint8Array(png);
+    const headers = {
+      "content-type": "application/octet-stream",
+      "x-zemicc-filename": encodeURIComponent("测试.png"),
+    };
+    assert.equal(
+      (
+        await fetch(server.url + "/api/images", {
+          method: "POST",
+          headers,
+          body,
+        })
+      ).status,
+      401,
+    );
+    const bootstrap = await fetch(server.url + "/api/bootstrap", {
+      headers: { "x-zemicc-client": "1" },
+    });
+    const { token } = (await bootstrap.json()) as { token: string };
+    const cookie = bootstrap.headers.get("set-cookie")!.split(";")[0];
+    const authenticated = { ...headers, "x-zemicc-token": token };
+    assert.equal(
+      (
+        await fetch(server.url + "/api/images", {
+          method: "POST",
+          headers: { ...authenticated, origin: "https://evil.example" },
+          body,
+        })
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await fetch(server.url + "/api/images", {
+          method: "POST",
+          headers: authenticated,
+          body: "<svg></svg>",
+        })
+      ).status,
+      400,
+    );
+    const upload = await fetch(server.url + "/api/images", {
+      method: "POST",
+      headers: authenticated,
+      body,
+    });
+    assert.equal(upload.status, 200);
+    const image = (await upload.json()) as { id: string; name: string };
+    assert.equal(image.name, "测试.png");
+    assert.ok(!JSON.stringify(image).includes("data"));
+    assert.equal(
+      (await fetch(`${server.url}/api/images/${image.id}`)).status,
+      401,
+    );
+    const view = await fetch(`${server.url}/api/images/${image.id}`, {
+      headers: { cookie },
+    });
+    assert.equal(view.headers.get("content-type"), "image/png");
+    assert.equal(view.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(view.headers.get("cache-control"), "no-store");
+    assert.equal(
+      (await sharp(Buffer.from(await view.arrayBuffer())).metadata()).width,
+      2,
+    );
   } finally {
     await server.close();
     await fs.rm(dir, { recursive: true, force: true });

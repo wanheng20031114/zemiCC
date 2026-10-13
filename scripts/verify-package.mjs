@@ -23,8 +23,10 @@ const required = [
   "dist-server/server/index.js",
   "dist-server/server/agent.js",
   "dist-server/server/mcp.js",
+  "dist-server/server/images.js",
   "dist-server/package.json",
   "node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs",
+  "node_modules/sharp/package.json",
   "LICENSE",
   "THIRD_PARTY_NOTICES.md",
 ];
@@ -44,7 +46,7 @@ for (const name of entries) {
     `Private data in package: ${name}`,
   );
   assert.ok(
-    !/^node_modules\/(?:electron(?:-builder)?|typescript|tsx|sharp|@electron\/asar|@anthropic-ai\/claude-agent-sdk-(?:win32|linux|darwin)[^/]*)(?:\/|$)/.test(
+    !/^node_modules\/(?:electron(?:-builder)?|typescript|tsx|@electron\/asar|@anthropic-ai\/claude-agent-sdk-(?:win32|linux|darwin)[^/]*)(?:\/|$)/.test(
       name,
     ),
     `Unexpected build or duplicate native dependency: ${name}`,

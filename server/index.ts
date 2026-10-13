@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { Server } from "node:http";
 import { AgentHost } from "./agent.js";
 import { createAccessGuard } from "./security.js";
+import { MAX_UPLOAD_BYTES } from "../shared/images.js";
 import {
   projectRoot,
   listFiles,
@@ -34,9 +35,25 @@ export async function startServer(
   const access = createAccessGuard(() => port);
   app.disable("x-powered-by");
   app.use(access.networkGuard);
-  app.use(express.json({ limit: "128kb" }));
   app.get("/api/bootstrap", access.bootstrap);
   app.use("/api", access.apiGuard);
+  app.post(
+    "/api/images",
+    express.raw({ type: "application/octet-stream", limit: MAX_UPLOAD_BYTES }),
+    async (req, res) => {
+      const name = host.vault.redact(
+        decodeURIComponent(String(req.headers["x-zemicc-filename"] || "图片")),
+      );
+      res.json(await host.images.upload(req.body, name));
+    },
+  );
+  app.get("/api/images/:id", async (req, res) => {
+    const image = await host.images.read(req.params.id);
+    res
+      .type(image.attachment.mediaType)
+      .send(Buffer.from(image.data, "base64"));
+  });
+  app.use(express.json({ limit: "128kb" }));
   app.get("/api/state", (_req, res) =>
     res.json(host.vault.clean(host.snapshot())),
   );
@@ -138,7 +155,12 @@ export async function startServer(
   });
   app.post("/api/sessions/:id/send", async (req, res) => {
     if (typeof req.body.text !== "string") throw new Error("消息无效");
-    await host.send(req.params.id, req.body.text, model(req.body.model));
+    await host.send(
+      req.params.id,
+      req.body.text,
+      model(req.body.model),
+      req.body.images ?? [],
+    );
     res.json({ ok: true });
   });
   app.post("/api/sessions/:id/stop", async (req, res) => {

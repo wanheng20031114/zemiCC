@@ -1,6 +1,6 @@
 {
   "name": "zemicc",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "type": "module",
   "description": "A quiet desktop workspace for the Claude Agent SDK. Your key stays in memory.",
@@ -34,7 +34,8 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@electron/asar": "^4.3.1",
@@ -46,7 +47,6 @@
     "electron": "^44.7.0",
     "electron-builder": "^26.15.3",
     "prettier": "^3.9.10",
-    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"

@@ -1,10 +1,12 @@
 import type { McpView } from "./mcp.js";
+import type { ImageAttachment } from "./images.js";
 export type Phase = "idle" | "running" | "approval" | "error" | "interrupted";
 export type PermissionMode = "auto" | "manual";
 export type Entry = {
   id: string;
   kind: "user" | "assistant" | "tool" | "notice" | "error";
   text: string;
+  images?: ImageAttachment[];
   tool?: string;
   input?: string;
   state?: "running" | "done" | "denied";

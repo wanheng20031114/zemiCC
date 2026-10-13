@@ -21,6 +21,7 @@ import {
   FolderOpen,
   GitBranch,
   GitCompareArrows,
+  ImagePlus,
   KeyRound,
   Layers2,
   LockKeyhole,
@@ -56,6 +57,13 @@ import { api, bootstrap } from "./api";
 import { useZoom } from "./useZoom";
 import { Modal } from "./Modal";
 import { McpDialog } from "./McpDialog";
+import { DraftImages, ImageTiles, useImageDraft } from "./ImageAttachments";
+import {
+  IMAGE_ACCEPT,
+  MAX_IMAGES,
+  imageUrl,
+  type ImageAttachment,
+} from "../shared/images";
 
 const basename = (p: string) =>
   p.split(/[\\/]/).filter(Boolean).at(-1) || "选择项目";
@@ -800,6 +808,11 @@ export default function App() {
     diff: boolean;
   }>();
   const [deleteId, setDeleteId] = useState<string>();
+  const [imagePreview, setImagePreview] = useState<ImageAttachment>();
+  const [dragging, setDragging] = useState(false);
+  const dragDepth = useRef(0);
+  const imagePicker = useRef<HTMLInputElement>(null);
+  const imageDraft = useImageDraft(selected || "new", setError);
   const textarea = useRef<HTMLTextAreaElement>(null),
     scroll = useRef<HTMLDivElement>(null),
     stick = useRef(true);
@@ -880,7 +893,13 @@ export default function App() {
     }
   }
   async function send() {
-    if (!draft.trim() || sending) return;
+    if (
+      (!draft.trim() && !imageDraft.images.length) ||
+      sending ||
+      imageDraft.uploading ||
+      imageDraft.images.length > MAX_IMAGES
+    )
+      return;
     if (!project) {
       setProjectOpen(true);
       return;
@@ -891,9 +910,11 @@ export default function App() {
     }
     setSending(true);
     const text = draft.trim();
+    const images = imageDraft.images;
     const originalSelection = selected;
     let targetId = current?.id;
     setDraft("");
+    imageDraft.clear();
     try {
       let session = current;
       if (!session) {
@@ -902,9 +923,14 @@ export default function App() {
         if (selectedRef.current === originalSelection) setSelected(session.id);
       }
       stick.current = true;
-      await api(`/sessions/${session.id}/send`, { text, model });
+      await api(`/sessions/${session.id}/send`, {
+        text,
+        model,
+        images: images.map((image) => image.id),
+      });
     } catch (e) {
       setError((e as Error).message);
+      imageDraft.restore(images, targetId || originalSelection || "new");
       if (
         selectedRef.current === targetId ||
         selectedRef.current === originalSelection
@@ -1154,6 +1180,11 @@ export default function App() {
                                 .filter((e) => e.kind === "user")
                                 .at(-1)?.text || "",
                             );
+                            imageDraft.restore(
+                              current.entries
+                                .filter((e) => e.kind === "user")
+                                .at(-1)?.images || [],
+                            );
                             textarea.current?.focus();
                           }}
                         >
@@ -1176,7 +1207,13 @@ export default function App() {
                             <Markdown text={entry.text} />
                           ) : (
                             <>
-                              <p>{entry.text}</p>
+                              {!!entry.images?.length && (
+                                <ImageTiles
+                                  images={entry.images}
+                                  onOpen={setImagePreview}
+                                />
+                              )}
+                              {entry.text && <p>{entry.text}</p>}
                               {entry.delivery === "pending" && (
                                 <small className="message-delivery">
                                   待接收
@@ -1213,7 +1250,72 @@ export default function App() {
               )}
             </div>
             <div className="composer-area">
-              <div className={`composer ${busy ? "busy" : ""}`}>
+              <div
+                className={`composer ${busy ? "busy" : ""} ${dragging ? "dragging" : ""}`}
+                onDragEnter={(e) => {
+                  if (e.dataTransfer.types.includes("Files")) {
+                    e.preventDefault();
+                    dragDepth.current++;
+                    setDragging(true);
+                  }
+                }}
+                onDragOver={(e) => {
+                  if (e.dataTransfer.types.includes("Files")) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "copy";
+                  }
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  dragDepth.current = Math.max(0, dragDepth.current - 1);
+                  if (!dragDepth.current) setDragging(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  dragDepth.current = 0;
+                  setDragging(false);
+                  imageDraft.addFiles(Array.from(e.dataTransfer.files));
+                  textarea.current?.focus();
+                }}
+                onPaste={(e) => {
+                  const files = Array.from(e.clipboardData.items)
+                    .filter((item) => item.kind === "file")
+                    .flatMap((item) => {
+                      const file = item.getAsFile();
+                      return file ? [file] : [];
+                    });
+                  if (files.length) {
+                    e.preventDefault();
+                    imageDraft.addFiles(files);
+                    const text = e.clipboardData.getData("text/plain");
+                    if (text) setDraft((value) => value + text);
+                  }
+                }}
+              >
+                {dragging && (
+                  <div className="image-drop-hint">
+                    <ImagePlus size={25} />
+                    <span>松开添加图片</span>
+                  </div>
+                )}
+                <DraftImages
+                  items={imageDraft.items}
+                  onRemove={imageDraft.remove}
+                  onOpen={setImagePreview}
+                />
+                <input
+                  ref={imagePicker}
+                  type="file"
+                  accept={IMAGE_ACCEPT}
+                  multiple
+                  hidden
+                  aria-label="选择图片文件"
+                  onChange={(e) => {
+                    imageDraft.addFiles(Array.from(e.target.files || []));
+                    e.target.value = "";
+                    textarea.current?.focus();
+                  }}
+                />
                 <textarea
                   ref={textarea}
                   value={draft}
@@ -1221,7 +1323,7 @@ export default function App() {
                   placeholder={
                     busy
                       ? "补充信息，或调整当前任务…"
-                      : "描述你的想法，剩下的一起完成…"
+                      : "描述你的想法，也可以粘贴或拖入图片…"
                   }
                   aria-label="消息"
                   rows={3}
@@ -1240,10 +1342,10 @@ export default function App() {
                 <div className="composer-toolbar">
                   <div className="composer-left">
                     <IconButton
-                      label="浏览项目文件"
-                      onClick={() => setInspector(true)}
+                      label="添加图片 · 可粘贴或拖入"
+                      onClick={() => imagePicker.current?.click()}
                     >
-                      <Plus size={17} />
+                      <ImagePlus size={18} />
                     </IconButton>
                     <div className="model-select">
                       <span className="model-dot" />
@@ -1303,7 +1405,13 @@ export default function App() {
                     )}
                     <button
                       className="send-button"
-                      disabled={!draft.trim() || sending || !online}
+                      disabled={
+                        (!draft.trim() && !imageDraft.images.length) ||
+                        imageDraft.uploading ||
+                        imageDraft.images.length > MAX_IMAGES ||
+                        sending ||
+                        !online
+                      }
                       title={busy ? "补充到当前任务 · Enter" : "发送 · Enter"}
                       aria-label={busy ? "补充消息" : "发送消息"}
                       onClick={() => void send()}
@@ -1346,6 +1454,18 @@ export default function App() {
           onClose={() => setConnectionOpen(false)}
           onChange={() => void reload()}
         />
+      )}
+      {imagePreview && (
+        <Modal
+          title={imagePreview.name}
+          subtitle={`${imagePreview.width} × ${imagePreview.height}`}
+          wide
+          onClose={() => setImagePreview(undefined)}
+        >
+          <div className="image-lightbox">
+            <img src={imageUrl(imagePreview.id)} alt={imagePreview.name} />
+          </div>
+        </Modal>
       )}
       {mcpOpen && (
         <McpDialog

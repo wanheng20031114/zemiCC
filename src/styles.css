@@ -974,6 +974,7 @@ textarea {
   flex-shrink: 0;
 }
 .composer {
+  position: relative;
   background: #fffffb;
   border: 1px solid #dce3cf;
   border-radius: 14px;
@@ -986,6 +987,124 @@ textarea {
 .composer:focus-within {
   border-color: #9cab82;
   box-shadow: 0 4px 22px #5264310e;
+}
+.composer.dragging {
+  border-color: #7b9159;
+  box-shadow: 0 0 0 3px #7b915921;
+}
+.image-drop-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #f5f8eef5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #536b39;
+  font-size: 17px;
+  pointer-events: none;
+}
+.draft-images {
+  display: flex;
+  gap: 12px;
+  padding: 17px 21px 0;
+  overflow-x: auto;
+}
+.draft-image {
+  position: relative;
+  flex: 0 0 88px;
+  min-width: 0;
+}
+.draft-image-preview {
+  display: block;
+  width: 88px;
+  padding: 0;
+  background: #f4f6ef;
+  border: 1px solid #dce3cf;
+  border-radius: 9px;
+  overflow: hidden;
+  color: #617052;
+}
+.draft-image-preview img,
+.image-loading {
+  display: flex;
+  width: 86px;
+  height: 66px;
+  object-fit: cover;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.draft-image-preview > span:last-child {
+  display: block;
+  padding: 5px 7px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #dce3cf;
+  border-radius: 50%;
+  background: #fffffff2;
+  color: #4a5940;
+  box-shadow: 0 1px 4px #0001;
+}
+.image-remove:hover {
+  background: #e5ebda;
+}
+.image-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 2px 0 8px;
+}
+.image-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  width: 164px;
+  max-width: 100%;
+  border: 1px solid #d4dfc4;
+  border-radius: 9px;
+  background: #f9fbf4;
+  overflow: hidden;
+  color: #596d46;
+}
+.image-tile img {
+  width: 100%;
+  height: 112px;
+  object-fit: contain;
+}
+.image-tile span {
+  padding: 4px 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.image-lightbox {
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background: #f4f6ef;
+  border-radius: 10px;
+}
+.image-lightbox img {
+  display: block;
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
 }
 .composer textarea {
   display: block;

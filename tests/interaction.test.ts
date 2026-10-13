@@ -6,6 +6,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import type { Query, SDKMessage } from "@anthropic-ai/claude-agent-sdk";
 import { AgentHost, PromptQueue } from "../server/agent.js";
+import sharp from "sharp";
 
 async function fixture() {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "zemicc-input-"));
@@ -259,6 +260,77 @@ test("running conversations accept ordered follow-ups and remain busy until all 
     f.host.message(f.session, f.worker, result([inputs[1].uuid!]));
     assert.equal(f.session.phase, "idle");
     assert.equal(f.worker.pendingInput.size, 0);
+  } finally {
+    await f.close();
+  }
+});
+
+test("image-only follow-ups carry actual pixels, persist only references and survive restart", async () => {
+  const f = await fixture();
+  let restored: AgentHost | undefined;
+  try {
+    f.session.phase = "running";
+    const png = await sharp({
+      create: { width: 16, height: 16, channels: 3, background: "#123456" },
+    })
+      .png()
+      .toBuffer();
+    const image = await f.host.images.upload(png, "reference.png");
+    await f.host.send(f.session.id, "", f.session.model, [image.id]);
+    const message = f.worker.queue.items[0];
+    assert.ok(Array.isArray(message.message.content));
+    const block = message.message.content[0];
+    assert.equal(block.type, "image");
+    if (block.type !== "image" || block.source.type !== "base64")
+      throw new Error("Expected SDK image block");
+    assert.equal(
+      (await sharp(Buffer.from(block.source.data, "base64")).metadata()).width,
+      16,
+    );
+    assert.equal(f.session.title, "reference.png");
+    assert.equal(f.session.entries[0].images?.[0].id, image.id);
+    assert.ok(!JSON.stringify(f.host.snapshot()).includes(block.source.data));
+    f.host.message(f.session, f.worker, result([message.uuid!]));
+    await f.host.close();
+    restored = new AgentHost(f.host.dataDir);
+    await restored.init();
+    assert.equal(
+      restored.get(f.session.id).entries[0].images?.[0].id,
+      image.id,
+    );
+    assert.ok((await restored.images.read(image.id)).data);
+    assert.ok(
+      !(
+        await fs.readFile(path.join(f.host.dataDir, "workspace.json"), "utf8")
+      ).includes(block.source.data),
+    );
+    await restored.remove(f.session.id);
+    await assert.rejects(restored.images.read(image.id), /图片不存在/);
+  } finally {
+    await restored?.close();
+    await f.close();
+  }
+});
+
+test("missing or excessive image references reject before changing the session", async () => {
+  const f = await fixture();
+  try {
+    await assert.rejects(
+      f.host.send(f.session.id, "hello", f.session.model, [randomUUID()]),
+      /图片不存在/,
+    );
+    await assert.rejects(
+      f.host.send(
+        f.session.id,
+        "hello",
+        f.session.model,
+        Array.from({ length: 6 }, () => randomUUID()),
+      ),
+      /最多/,
+    );
+    assert.equal(f.session.entries.length, 0);
+    assert.equal(f.session.phase, "idle");
+    assert.equal(f.worker.queue.items.length, 0);
   } finally {
     await f.close();
   }

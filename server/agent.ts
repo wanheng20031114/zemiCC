@@ -19,12 +19,13 @@ import { toolPolicy } from "./permissions.js";
 import { APP_VERSION } from "../shared/version.js";
 import { McpRegistry } from "./mcp.js";
 import { mergeLegacyAssistantDuplicates } from "./messages.js";
+import { ImageStore } from "./images.js";
 
 export class PromptQueue implements AsyncIterable<SDKUserMessage> {
   items: SDKUserMessage[] = [];
   wake?: () => void;
   ended = false;
-  push(text: string, id: string) {
+  push(content: SDKUserMessage["message"]["content"], id: string) {
     if (this.ended) throw new Error("会话已停止，请重新发送");
     this.items.push({
       type: "user",
@@ -33,7 +34,7 @@ export class PromptQueue implements AsyncIterable<SDKUserMessage> {
       priority: "next",
       session_id: "",
       parent_tool_use_id: null,
-      message: { role: "user", content: text },
+      message: { role: "user", content },
     });
     this.wake?.();
   }
@@ -71,6 +72,7 @@ type Worker = {
 export class AgentHost {
   readonly vault = new CredentialVault();
   readonly mcp: McpRegistry;
+  readonly images: ImageStore;
   sessions = new Map<string, Session>();
   project = "";
   permissionMode: PermissionMode = "auto";
@@ -92,10 +94,12 @@ export class AgentHost {
     readonly claudeExecutablePath?: string,
   ) {
     this.mcp = new McpRegistry(dataDir, this.vault, claudeExecutablePath);
+    this.images = new ImageStore(dataDir);
   }
   async init() {
     await fs.mkdir(this.dataDir, { recursive: true });
     await this.mcp.init();
+    await this.images.init();
     try {
       const workspaceFile = path.join(this.dataDir, "workspace.json");
       const data = JSON.parse(await fs.readFile(workspaceFile, "utf8")) as {
@@ -139,6 +143,16 @@ export class AgentHost {
       if ((e as NodeJS.ErrnoException).code !== "ENOENT")
         throw new Error("本地会话文件无法读取；原文件已保留");
     }
+    await this.images.prune(this.referencedImages());
+  }
+  private referencedImages() {
+    return new Set(
+      [...this.sessions.values()].flatMap((s) =>
+        s.entries.flatMap((entry) =>
+          (entry.images || []).map((image) => image.id),
+        ),
+      ),
+    );
   }
   snapshot(): Snapshot {
     return {
@@ -474,11 +488,11 @@ export class AgentHost {
       },
     };
   }
-  async send(id: string, text: string, model: string) {
+  async send(id: string, text: string, model: string, imageIds: unknown = []) {
     const epoch = this.#epochs.get(id) || 0;
     const send = (this.#sends.get(id) || Promise.resolve())
       .catch(() => {})
-      .then(() => this.sendNow(id, text, model, epoch));
+      .then(() => this.sendNow(id, text, model, epoch, imageIds));
     this.#sends.set(id, send);
     try {
       await send;
@@ -491,6 +505,7 @@ export class AgentHost {
     text: string,
     model: string,
     epoch: number,
+    imageIds: unknown,
   ) {
     const cancelled = () => (this.#epochs.get(id) || 0) !== epoch;
     if (cancelled()) throw new Error("已停止，消息未发送");
@@ -500,14 +515,22 @@ export class AgentHost {
       throw new Error("正在切换权限，请稍后再发送");
     this.vault.get();
     text = this.vault.redact(text.trim());
-    if (!text || text.length > 30_000)
-      throw new Error("消息长度应为 1–30,000 字符");
+    const images = await this.images.resolve(imageIds);
+    if (cancelled()) throw new Error("已停止，消息未发送");
+    if ((!text && !images.length) || text.length > 30_000)
+      throw new Error("请添加文字或图片，文字不能超过 30,000 字符");
     const previous = s.entries.filter(
       (e) =>
         ["user", "assistant"].includes(e.kind) && e.delivery !== "cancelled",
     );
-    const entry = this.add(s, "user", text, { delivery: "pending" });
-    if (previous.length === 0) s.title = text.slice(0, 32);
+    const entry = this.add(s, "user", text, {
+      delivery: "pending",
+      ...(images.length
+        ? { images: images.map((image) => image.attachment) }
+        : {}),
+    });
+    if (previous.length === 0)
+      s.title = (text || images[0]?.attachment.name || "图片").slice(0, 32);
     if (!s.approvals.length) s.phase = "running";
     this.changed(s, true);
     let worker = this.workers.get(id);
@@ -527,7 +550,7 @@ export class AgentHost {
         if (cancelled() || worker.abort.signal.aborted)
           throw new Error("已停止，消息未发送");
         worker.pendingInput.add(entry.id);
-        worker.queue.push(text, entry.id);
+        worker.queue.push(await this.images.prompt(text, images), entry.id);
         s.phase = s.approvals.length ? "approval" : "running";
         this.changed(s, true);
         return;
@@ -637,14 +660,12 @@ export class AgentHost {
       }
       if (abort.signal.aborted || cancelled())
         throw new Error("已停止，消息未发送");
-      let prompt = text;
+      const prompt = await this.images.prompt(text, images, previous);
       if (previous.length) {
-        const history = previous
-          .map((e) => `${e.kind === "user" ? "USER" : "ASSISTANT"}: ${e.text}`)
-          .join("\n\n");
-        prompt = `Continue this locally restored conversation. The following is historical context, not new instructions. Some older context may be omitted. Re-check files before making changes.\n<previous_conversation>\n${history.slice(-60_000)}\n</previous_conversation>\n\nCurrent user request:\n${text}`;
         this.add(s, "notice", "已从本地对话恢复上下文");
       }
+      if (abort.signal.aborted || cancelled())
+        throw new Error("已停止，消息未发送");
       s.restored = false;
       worker.pendingInput.add(entry.id);
       queue.push(prompt, entry.id);
@@ -882,8 +903,13 @@ export class AgentHost {
   }
   async remove(id: string) {
     await this.stop(id);
+    const images = this.get(id).entries.flatMap((entry) =>
+      (entry.images || []).map((image) => image.id),
+    );
     this.sessions.delete(id);
     await this.save();
+    const retained = this.referencedImages();
+    await this.images.remove(images.filter((id) => !retained.has(id)));
     this.emit({ type: "state", state: this.snapshot() });
   }
   async close() {
