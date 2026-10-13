@@ -38,6 +38,17 @@ export async function startServer(
   app.get("/api/state", (_req, res) =>
     res.json(host.vault.clean(host.snapshot())),
   );
+  app.post("/api/permissions", async (req, res) => {
+    if (req.body.mode !== "auto" && req.body.mode !== "manual")
+      throw new Error("权限模式无效");
+    if (
+      req.body.sessionId !== undefined &&
+      typeof req.body.sessionId !== "string"
+    )
+      throw new Error("会话无效");
+    await host.setPermissions(req.body.mode, req.body.sessionId);
+    res.json(host.vault.clean(host.snapshot()));
+  });
   app.get("/api/events", (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Connection", "keep-alive");

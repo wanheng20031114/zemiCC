@@ -32,6 +32,7 @@ import {
   Search,
   Settings2,
   ShieldCheck,
+  Sparkles,
   Square,
   Terminal,
   Trash2,
@@ -45,6 +46,7 @@ import type {
   Change,
   Entry,
   FileItem,
+  PermissionMode,
   Session,
   Snapshot,
 } from "../shared/types";
@@ -479,7 +481,8 @@ function ApprovalCard({
         <>
           <p>
             {String(
-              input.description ||
+              approval.reason ||
+                input.description ||
                 (["Bash", "PowerShell"].includes(approval.tool)
                   ? "此命令以你的本机权限运行，请检查后执行。"
                   : "检查内容，然后决定是否允许。"),
@@ -814,6 +817,7 @@ export default function App() {
   const [state, setState] = useState<Snapshot>({
     project: "",
     connected: false,
+    permissionMode: "auto",
     sessions: [],
     version: "0.1.0",
   });
@@ -822,6 +826,8 @@ export default function App() {
   const [draft, setDraft] = useState(""),
     [connectionOpen, setConnectionOpen] = useState(false),
     [projectOpen, setProjectOpen] = useState(false),
+    [permissionOpen, setPermissionOpen] = useState(false),
+    [permissionSaving, setPermissionSaving] = useState(false),
     [inspector, setInspector] = useState(true);
   const [online, setOnline] = useState(false),
     [error, setError] = useState(""),
@@ -841,6 +847,7 @@ export default function App() {
   const current = state.sessions.find((s) => s.id === selected);
   const project = current?.project || state.project;
   const busy = current?.phase === "running" || current?.phase === "approval";
+  const permissionMode = current?.permissionMode || state.permissionMode;
   useEffect(() => {
     let disposed = false,
       events: EventSource | undefined;
@@ -899,6 +906,19 @@ export default function App() {
   }, []);
   async function reload() {
     setState(await api<Snapshot>("/state"));
+  }
+  async function changePermission(mode: PermissionMode) {
+    setPermissionSaving(true);
+    try {
+      setState(
+        await api<Snapshot>("/permissions", { mode, sessionId: current?.id }),
+      );
+      setPermissionOpen(false);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setPermissionSaving(false);
+    }
   }
   async function send() {
     if (!draft.trim() || busy || sending) return;
@@ -1253,13 +1273,30 @@ export default function App() {
                     </div>
                   </div>
                   <div className="composer-right">
-                    <span
-                      className="permission-chip"
-                      title="写入和命令逐次确认"
+                    <button
+                      type="button"
+                      className={`permission-chip ${permissionMode}`}
+                      aria-label="权限模式"
+                      aria-haspopup="dialog"
+                      title={
+                        current?.permissionFallback
+                          ? "自动命令审核暂不可用，命令将请求确认"
+                          : "切换权限模式"
+                      }
+                      onClick={() => setPermissionOpen(true)}
                     >
-                      <ShieldCheck size={13} />
-                      逐次确认
-                    </span>
+                      {permissionMode === "auto" ? (
+                        <Sparkles size={14} />
+                      ) : (
+                        <ShieldCheck size={14} />
+                      )}
+                      {permissionMode === "auto"
+                        ? current?.permissionFallback
+                          ? "自动 · 命令确认"
+                          : "项目内自动"
+                        : "逐次确认"}
+                      <ChevronDown size={12} />
+                    </button>
                     {busy ? (
                       <button
                         className="send-button stop"
@@ -1320,6 +1357,70 @@ export default function App() {
           onClose={() => setConnectionOpen(false)}
           onChange={() => void reload()}
         />
+      )}
+      {permissionOpen && (
+        <Modal
+          title="权限模式"
+          subtitle="让日常工作自然进行，重要操作由你决定。"
+          onClose={() => setPermissionOpen(false)}
+        >
+          <div
+            className="permission-options"
+            role="radiogroup"
+            aria-label="选择权限模式"
+          >
+            {(
+              [
+                {
+                  mode: "auto",
+                  label: "项目内自动",
+                  description: "自动编辑与搜索，命令交由模型审核。",
+                  icon: <Sparkles size={21} />,
+                },
+                {
+                  mode: "manual",
+                  label: "逐次确认",
+                  description: "文件变更、搜索与命令逐次确认。",
+                  icon: <ShieldCheck size={21} />,
+                },
+              ] as const
+            ).map((option) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={permissionMode === option.mode}
+                key={option.mode}
+                className={`permission-option ${permissionMode === option.mode ? "selected" : ""}`}
+                disabled={busy || permissionSaving || !online}
+                onClick={() => void changePermission(option.mode)}
+              >
+                <span className="permission-option-icon">{option.icon}</span>
+                <span>
+                  <strong>
+                    {option.label}
+                    {option.mode === "auto" && <small>推荐</small>}
+                  </strong>
+                  <span>{option.description}</span>
+                </span>
+                <span className="permission-radio">
+                  {permissionMode === option.mode && <Check size={14} />}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="permission-boundary">
+            <ShieldCheck size={17} />
+            <span>
+              删除 · 覆盖历史 · 对外发布 · 权限变更
+              <span>仍需确认，凭据文件保持受保护。</span>
+            </span>
+          </div>
+          <p className="permission-note">
+            {busy
+              ? "当前任务结束或停止后，即可切换。"
+              : "应用于当前对话及新对话。命令以你的本机权限运行。"}
+          </p>
+        </Modal>
       )}
       {projectOpen && (
         <ProjectDialog

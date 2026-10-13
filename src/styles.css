@@ -703,6 +703,104 @@ textarea {
   color: #9eaa8e;
   font-size: 12px;
   margin-right: 7px;
+  border-radius: 7px;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+.permission-chip:hover,
+.permission-chip.auto {
+  color: #52643e;
+  background: #edf1e5;
+}
+.permission-options {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+}
+.permission-option {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e1e6d9;
+  border-radius: 12px;
+  background: #fafbf7;
+}
+.permission-option.selected {
+  border-color: #99ab7d;
+  background: #f0f4e8;
+}
+.permission-option:hover:not(:disabled) {
+  border-color: #99ab7d;
+}
+.permission-option-icon {
+  color: #6d7e52;
+  width: 37px;
+  height: 37px;
+  display: grid;
+  place-items: center;
+  background: #e7ecdc;
+  border-radius: 10px;
+}
+.permission-option > span:nth-child(2) {
+  flex: 1;
+}
+.permission-option strong {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.permission-option strong small {
+  color: #6a7e4d;
+  font-size: 11px;
+  font-weight: 400;
+}
+.permission-option strong + span {
+  display: block;
+  margin-top: 7px;
+  color: #727f65;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.permission-radio {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #c9d2bd;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.selected .permission-radio {
+  background: #6d7e52;
+  border-color: #6d7e52;
+  color: white;
+}
+.permission-boundary {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 20px 3px 0;
+  color: #687759;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.permission-boundary > svg {
+  flex: none;
+  margin-top: 2px;
+}
+.permission-boundary span > span {
+  display: block;
+  color: #87917c;
+  margin-top: 2px;
+}
+.permission-note {
+  color: #87917c;
+  font-size: 12px;
+  margin: 18px 0 0;
+  line-height: 1.7;
 }
 .send-button {
   width: 32px;
@@ -1726,7 +1824,9 @@ textarea {
     display: none;
   }
   .permission-chip {
-    display: none;
+    margin-right: 0;
+    padding: 5px;
+    font-size: 12px;
   }
   .topbar {
     height: 58px;

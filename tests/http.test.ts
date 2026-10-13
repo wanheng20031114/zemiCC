@@ -33,6 +33,36 @@ test("local API authenticates, blocks hostile origins, clears credentials and do
     const key = "test-only-secret-never-real-123";
     assert.equal(
       (
+        await fetch(server.url + "/api/permissions", {
+          method: "POST",
+          headers: { cookie, "content-type": "application/json" },
+          body: JSON.stringify({ mode: "manual" }),
+        })
+      ).status,
+      401,
+    );
+    assert.equal(
+      (
+        await fetch(server.url + "/api/permissions", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ mode: "bypassPermissions" }),
+        })
+      ).status,
+      400,
+    );
+    const permissions = await fetch(server.url + "/api/permissions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ mode: "manual" }),
+    });
+    assert.equal(permissions.status, 200);
+    assert.equal(
+      ((await permissions.json()) as { permissionMode: string }).permissionMode,
+      "manual",
+    );
+    assert.equal(
+      (
         await fetch(server.url + "/api/credential", {
           method: "POST",
           headers,

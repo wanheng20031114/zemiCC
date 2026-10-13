@@ -1,4 +1,5 @@
 export type Phase = "idle" | "running" | "approval" | "error" | "interrupted";
+export type PermissionMode = "auto" | "manual";
 export type Entry = {
   id: string;
   kind: "user" | "assistant" | "tool" | "notice" | "error";
@@ -20,12 +21,15 @@ export type Approval = {
   input: Record<string, unknown>;
   questions?: Question[];
   time: number;
+  reason?: string;
 };
 export type Session = {
   id: string;
   title: string;
   project: string;
   model: string;
+  permissionMode: PermissionMode;
+  permissionFallback?: boolean;
   phase: Phase;
   entries: Entry[];
   approvals: Approval[];
@@ -37,6 +41,7 @@ export type Session = {
 export type Snapshot = {
   project: string;
   connected: boolean;
+  permissionMode: PermissionMode;
   sessions: Session[];
   version: string;
 };
