@@ -30,6 +30,7 @@ export async function toolPolicy(
   mode: PermissionMode,
   tool: string,
   original: Record<string, unknown>,
+  mcp?: { names: string[]; server?: { name: string; source: string } },
 ): Promise<ToolPolicy> {
   const input = { ...original };
   const result = (
@@ -37,6 +38,19 @@ export async function toolPolicy(
     reason?: string,
   ): ToolPolicy => ({ behavior, input, reason });
   try {
+    if (tool.startsWith("mcp__")) {
+      const server = mcp?.server;
+      if (
+        !server ||
+        server.source !== "dynamic" ||
+        !mcp?.names.includes(server.name) ||
+        !tool.startsWith(`mcp__${server.name}__`)
+      )
+        return result("ask", "此 MCP 工具的服务器来源需要确认");
+      return mode === "auto"
+        ? result("defer")
+        : result("ask", "逐次确认模式：检查 MCP 工具调用");
+    }
     if (["Read", "Write", "Edit", "MultiEdit", "NotebookEdit"].includes(tool)) {
       const field = tool === "NotebookEdit" ? "notebook_path" : "file_path";
       if (typeof input[field] !== "string")

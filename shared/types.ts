@@ -1,3 +1,4 @@
+import type { McpView } from "./mcp.js";
 export type Phase = "idle" | "running" | "approval" | "error" | "interrupted";
 export type PermissionMode = "auto" | "manual";
 export type Entry = {
@@ -44,6 +45,7 @@ export type Snapshot = {
   permissionMode: PermissionMode;
   sessions: Session[];
   version: string;
+  mcp: McpView[];
 };
 export type FileItem = {
   name: string;

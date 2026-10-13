@@ -17,6 +17,7 @@ import type {
 import { CredentialVault, sdkEnvironment } from "./security.js";
 import { toolPolicy } from "./permissions.js";
 import { APP_VERSION } from "../shared/version.js";
+import { McpRegistry } from "./mcp.js";
 
 class PromptQueue implements AsyncIterable<SDKUserMessage> {
   items: SDKUserMessage[] = [];
@@ -56,9 +57,11 @@ type Worker = {
   seen: Set<string>;
   done?: Promise<void>;
   runtime: string;
+  mcpRevision: number;
 };
 export class AgentHost {
   readonly vault = new CredentialVault();
+  readonly mcp: McpRegistry;
   sessions = new Map<string, Session>();
   project = "";
   permissionMode: PermissionMode = "auto";
@@ -71,12 +74,16 @@ export class AgentHost {
   #saveQueue: Promise<void> = Promise.resolve();
   #timers = new Map<string, NodeJS.Timeout>();
   #modeChanges = new Set<string>();
+  #mcpChanging = false;
   constructor(
     readonly dataDir: string,
     readonly claudeExecutablePath?: string,
-  ) {}
+  ) {
+    this.mcp = new McpRegistry(dataDir, this.vault, claudeExecutablePath);
+  }
   async init() {
     await fs.mkdir(this.dataDir, { recursive: true });
+    await this.mcp.init();
     try {
       const data = JSON.parse(
         await fs.readFile(path.join(this.dataDir, "workspace.json"), "utf8"),
@@ -113,6 +120,7 @@ export class AgentHost {
         (a, b) => b.updated - a.updated,
       ),
       version: APP_VERSION,
+      mcp: this.mcp.views(),
     };
   }
   emit(event: unknown) {
@@ -135,8 +143,8 @@ export class AgentHost {
       );
   }
   async save() {
-    const payload = this.vault.redact(
-      JSON.stringify({
+    const payload = JSON.stringify(
+      this.vault.clean({
         project: this.project,
         permissionMode: this.permissionMode,
         sessions: [...this.sessions.values()].map((s) => ({
@@ -157,6 +165,49 @@ export class AgentHost {
   async setProject(project: string) {
     this.project = project;
     await this.save();
+    this.emit({ type: "state", state: this.snapshot() });
+  }
+  mcpState() {
+    return {
+      servers: this.mcp.views(),
+      busy:
+        this.#mcpChanging ||
+        [...this.sessions.values()].some(
+          (s) => s.phase === "running" || s.phase === "approval",
+        ),
+    };
+  }
+  async configureMcp(action: () => Promise<void>, disconnect = true) {
+    if (this.mcpState().busy)
+      throw new Error("请等当前任务或连接测试结束后，再修改 MCP 配置");
+    this.#mcpChanging = true;
+    try {
+      await action();
+      if (disconnect) {
+        for (const [id, worker] of this.workers) {
+          try {
+            await worker.query.setMcpServers({});
+            worker.mcpRevision = -1;
+          } catch {
+            await this.stop(id);
+          }
+        }
+      }
+    } finally {
+      this.#mcpChanging = false;
+      this.emit({ type: "state", state: this.snapshot() });
+    }
+  }
+  async syncMcp(s: Session, worker: Worker) {
+    if (worker.mcpRevision === this.mcp.revision) return;
+    const unavailable = await this.mcp.attach(worker.query);
+    worker.mcpRevision = this.mcp.revision;
+    if (unavailable.length)
+      this.add(
+        s,
+        "notice",
+        `部分 MCP 暂不可用：${unavailable.map((item) => item.name).join("、")}。可在 MCP 面板检查连接。`,
+      );
     this.emit({ type: "state", state: this.snapshot() });
   }
   async setPermissions(mode: PermissionMode, sessionId?: string) {
@@ -293,10 +344,17 @@ export class AgentHost {
     input: Record<string, unknown>,
     signal: AbortSignal,
     reason?: string,
+    mcpServer?: { name: string; source: string },
   ) {
     if (signal.aborted) return { behavior: "deny" as const, message: "已停止" };
     try {
-      const policy = await toolPolicy(s.project, s.permissionMode, tool, input);
+      const policy = await toolPolicy(
+        s.project,
+        s.permissionMode,
+        tool,
+        input,
+        { names: this.mcp.names(), server: mcpServer },
+      );
       if (policy.behavior === "deny")
         return {
           behavior: "deny" as const,
@@ -334,6 +392,7 @@ export class AgentHost {
     tool: string,
     input: Record<string, unknown>,
     signal: AbortSignal,
+    mcpServer?: { name: string; source: string },
   ) {
     if (signal.aborted)
       return {
@@ -343,7 +402,10 @@ export class AgentHost {
           permissionDecisionReason: "已停止",
         },
       };
-    const policy = await toolPolicy(s.project, s.permissionMode, tool, input);
+    const policy = await toolPolicy(s.project, s.permissionMode, tool, input, {
+      names: this.mcp.names(),
+      server: mcpServer,
+    });
     // No hook allow for commands: this preserves the SDK's native classifier.
     if (policy.behavior === "defer") return {};
     return {
@@ -360,6 +422,7 @@ export class AgentHost {
     };
   }
   async send(id: string, text: string, model: string) {
+    if (this.#mcpChanging) throw new Error("正在更新 MCP 连接，请稍后发送");
     const s = this.get(id);
     if (s.phase === "running" || s.phase === "approval")
       throw new Error("请等待当前操作完成");
@@ -382,6 +445,7 @@ export class AgentHost {
     if (worker) {
       try {
         await worker.query.setModel(model);
+        await this.syncMcp(s, worker);
         worker.queue.push(text);
         return;
       } catch {
@@ -403,6 +467,7 @@ export class AgentHost {
         persistSession: false,
         permissionMode: s.permissionMode === "auto" ? "auto" : "default",
         settingSources: [],
+        strictMcpConfig: true,
         env: sdkEnvironment(this.vault.get(), runtime),
         tools: [
           "Read",
@@ -428,6 +493,7 @@ export class AgentHost {
             input,
             options.signal,
             options.decisionReason,
+            options.mcpServer,
           ),
         hooks: {
           PreToolUse: [
@@ -441,6 +507,7 @@ export class AgentHost {
                     input.tool_name,
                     input.tool_input as Record<string, unknown>,
                     options.signal,
+                    input.mcp_server,
                   );
                 },
               ],
@@ -458,11 +525,23 @@ export class AgentHost {
       abort,
       baseline: { ...s.usage },
       runtime,
+      mcpRevision: -1,
       raw: new Map(),
       messageId: "",
       seen: new Set(),
     };
     this.workers.set(id, worker);
+    worker.done = this.consume(s, worker);
+    try {
+      await this.syncMcp(s, worker);
+    } catch (error) {
+      await this.stop(id);
+      s.phase = "error";
+      this.add(s, "error", "MCP 初始化失败，请在 MCP 面板检查连接后重试。");
+      await this.save();
+      throw error;
+    }
+    if (abort.signal.aborted) return;
     let prompt = text;
     if (previous.length) {
       const history = previous
@@ -473,22 +552,11 @@ export class AgentHost {
     }
     s.restored = false;
     queue.push(prompt);
-    worker.done = this.consume(s, worker);
   }
   streamText(worker: Worker, s: Session, key: string, delta: string) {
     const raw = (worker.raw.get(key) || "") + delta;
     worker.raw.set(key, raw);
-    let safe = raw;
-    // Hold any suffix that is a prefix of the live key, including split stream chunks.
-    if (this.vault.connected) {
-      const secret = this.vault.get();
-      for (let n = Math.min(secret.length - 1, safe.length); n > 0; n--) {
-        if (safe.endsWith(secret.slice(0, n))) {
-          safe = safe.slice(0, -n);
-          break;
-        }
-      }
-    }
+    const safe = this.vault.streamSafe(raw);
     let entry = s.entries.find((e) => e.id === key);
     if (!entry) {
       entry = { id: key, kind: "assistant", text: "", time: Date.now() };
@@ -652,9 +720,11 @@ export class AgentHost {
     this.emit({ type: "state", state: this.snapshot() });
   }
   async close() {
+    await this.mcp.close();
     for (const id of [...this.workers.keys()]) await this.stop(id);
     await this.save();
     this.vault.clear();
+    this.vault.clearExtras();
     for (const t of this.#timers.values()) clearTimeout(t);
   }
 }

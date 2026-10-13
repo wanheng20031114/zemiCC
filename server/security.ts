@@ -7,6 +7,36 @@ import { APP_VERSION } from "../shared/version.js";
 /** Deliberately has no serialization method. A key exists for this process only. */
 export class CredentialVault {
   #key = "";
+  #extraSecrets = new Set<string>();
+  protect(values: string[]) {
+    for (const value of values) {
+      if (!value) continue;
+      this.#extraSecrets.add(value);
+      const auth = /^(?:Bearer|Basic|Token)\s+(.+)$/i.exec(value);
+      if (auth) this.#extraSecrets.add(auth[1]);
+    }
+  }
+  clearExtras() {
+    this.#extraSecrets.clear();
+  }
+  #secrets() {
+    return [this.#key, ...this.#extraSecrets]
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length);
+  }
+  streamSafe(text: string) {
+    let safe = text;
+    for (const secret of this.#secrets()) {
+      if (secret.length < 4) continue;
+      for (let n = Math.min(secret.length - 1, safe.length); n > 0; n--) {
+        if (safe.endsWith(secret.slice(0, n))) {
+          safe = safe.slice(0, -n);
+          break;
+        }
+      }
+    }
+    return safe;
+  }
   set(key: string) {
     if (
       typeof key !== "string" ||
@@ -28,7 +58,11 @@ export class CredentialVault {
     return this.#key.length > 0;
   }
   redact(text: string) {
-    const exact = this.#key ? text.split(this.#key).join("[REDACTED]") : text;
+    let exact = text;
+    for (const secret of this.#secrets()) {
+      if (secret.length >= 4) exact = exact.split(secret).join("[REDACTED]");
+      else if (exact === secret) exact = "[REDACTED]";
+    }
     return exact
       .replace(/\bsk-(?:ant-)?[a-zA-Z0-9_-]{10,}/g, "[REDACTED]")
       .replace(
@@ -37,7 +71,16 @@ export class CredentialVault {
       );
   }
   clean<T>(value: T): T {
-    return JSON.parse(this.redact(JSON.stringify(value))) as T;
+    if (typeof value === "string") return this.redact(value) as T;
+    if (Array.isArray(value)) return value.map((item) => this.clean(item)) as T;
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [
+          this.redact(key),
+          this.clean(item),
+        ]),
+      ) as T;
+    return value;
   }
 }
 

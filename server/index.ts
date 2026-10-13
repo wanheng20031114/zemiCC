@@ -51,6 +51,30 @@ export async function startServer(
     await host.setPermissions(req.body.mode, req.body.sessionId);
     res.json(host.vault.clean(host.snapshot()));
   });
+  app.get("/api/mcp", (_req, res) => res.json(host.mcpState()));
+  app.post("/api/mcp/import", async (req, res) => {
+    try {
+      await host.configureMcp(() => host.mcp.import(req.body));
+    } finally {
+      req.body = undefined;
+    }
+    res.json(host.mcpState());
+  });
+  app.post("/api/mcp/:name/enabled", async (req, res) => {
+    if (typeof req.body.enabled !== "boolean") throw new Error("启用状态无效");
+    await host.configureMcp(() =>
+      host.mcp.enable(req.params.name, req.body.enabled),
+    );
+    res.json(host.mcpState());
+  });
+  app.post("/api/mcp/:name/test", async (req, res) => {
+    await host.configureMcp(() => host.mcp.probe(req.params.name), false);
+    res.json(host.mcpState());
+  });
+  app.delete("/api/mcp/:name", async (req, res) => {
+    await host.configureMcp(() => host.mcp.remove(req.params.name));
+    res.json(host.mcpState());
+  });
   app.get("/api/events", (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Connection", "keep-alive");

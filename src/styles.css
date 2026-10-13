@@ -275,6 +275,359 @@ textarea {
 .sidebar-bottom {
   padding-top: 16px;
 }
+.mcp-sidebar-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 11px 10px;
+  color: #bdcbaa;
+  background: #313c2a;
+  border: 1px solid #414e37;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: left;
+}
+.mcp-sidebar-button > span {
+  flex: 1;
+}
+.mcp-sidebar-button small {
+  color: #8fa37a;
+  font-variant-numeric: tabular-nums;
+}
+.mcp-sidebar-button:hover {
+  background: #3b4732;
+}
+.mcp-panel {
+  margin-top: 25px;
+}
+.mcp-panel .primary,
+.mcp-panel .secondary {
+  font-size: 14px;
+}
+.mcp-toolbar,
+.mcp-toolbar > div,
+.mcp-card-top,
+.mcp-card-bottom,
+.mcp-actions,
+.mcp-secrets-heading,
+.mcp-form-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mcp-toolbar {
+  justify-content: space-between;
+  margin-bottom: 20px;
+  color: #7c8d68;
+  font-size: 14px;
+}
+.mcp-empty {
+  padding: 48px 15px 55px;
+  text-align: center;
+  background: #f2f6eb;
+  border: 1px dashed #d0dcc0;
+  border-radius: 12px;
+}
+.mcp-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8ba271;
+  margin-bottom: 27px;
+}
+.mcp-diagram > span {
+  height: 1px;
+  width: 48px;
+  margin: 0 14px;
+  background: #cbd8bc;
+}
+.mcp-diagram > div {
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border: 1px solid #d5e0c7;
+  background: #fffff9;
+  border-radius: 22px;
+  box-shadow: 0 8px 24px #5967430b;
+}
+.mcp-empty h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #687e51;
+  margin: 0 0 12px;
+}
+.mcp-empty p {
+  font-size: 14px;
+  color: #98aa85;
+  margin: 0;
+}
+.mcp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mcp-card {
+  background: #fcfdf7;
+  border: 1px solid #dce5cf;
+  border-radius: 12px;
+  padding: 18px;
+}
+.mcp-card-top {
+  gap: 14px;
+}
+.mcp-server-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: #849c66;
+  background: #edf2e4;
+  border: 1px solid #e0e8d4;
+  border-radius: 11px;
+}
+.mcp-server-name {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 7px;
+}
+.mcp-server-name strong {
+  font-size: 16px;
+  font-weight: 550;
+  color: #596e44;
+}
+.mcp-server-name > span {
+  font-size: 13px;
+  color: #91a17e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mcp-status {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+  color: #8e9a82;
+  font-size: 13px;
+}
+.mcp-status > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.mcp-status.ready {
+  color: #728d4f;
+}
+.mcp-status.failed {
+  color: #b57665;
+}
+.mcp-status.needs-auth,
+.mcp-status.needs-secrets {
+  color: #aa925b;
+}
+.mcp-card-bottom {
+  margin-top: 18px;
+  color: #97a585;
+  font-size: 13px;
+  gap: 10px;
+}
+.mcp-transport {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  border: 1px solid #dbe5cd;
+  border-radius: 5px;
+  padding: 3px 5px;
+}
+.mcp-actions {
+  margin-left: auto;
+  gap: 6px;
+}
+.mcp-actions .text-button {
+  margin-right: 8px;
+  font-size: 13px;
+}
+.mcp-actions .icon-button,
+.mcp-pair .icon-button {
+  margin: 0;
+  width: 30px;
+  height: 30px;
+}
+.mcp-tools {
+  border-top: 1px solid #e4eadb;
+  margin-top: 15px;
+  padding-top: 12px;
+  color: #879b71;
+  font-size: 13px;
+}
+.mcp-tools summary {
+  cursor: pointer;
+}
+.mcp-tools > div {
+  margin-top: 13px;
+  display: grid;
+  gap: 12px;
+}
+.mcp-tools > div > div {
+  display: flex;
+  gap: 9px;
+  align-items: start;
+}
+.mcp-tools svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.mcp-tools strong,
+.mcp-tools small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.mcp-tools strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.mcp-tools small {
+  font-size: 13px;
+  color: #97a588;
+  line-height: 1.65;
+  margin-top: 3px;
+}
+.mcp-note,
+.mcp-footnote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8d9f79;
+  font-size: 13px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.mcp-note svg,
+.mcp-footnote svg {
+  flex-shrink: 0;
+}
+.mcp-footnote {
+  margin: 20px 0 0;
+}
+.mcp-error {
+  color: #aa7d67;
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.mcp-back {
+  margin-bottom: 21px;
+  font-size: 14px;
+}
+.mcp-transports {
+  display: flex;
+  padding: 4px;
+  border: 1px solid #dce5d0;
+  border-radius: 9px;
+  background: #edf2e6;
+}
+.mcp-transports button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 6px;
+  color: #8d9e79;
+  font-size: 14px;
+}
+.mcp-transports button.selected {
+  background: #fffff8;
+  color: #687f4e;
+  box-shadow: 0 1px 5px #59674310;
+}
+.mcp-panel .field-label {
+  font-size: 14px;
+  color: #758d5e;
+}
+.mcp-panel .text-input {
+  font-size: 14px;
+}
+.mcp-json,
+.mcp-args {
+  font-family: "Cascadia Code", Consolas, monospace;
+  line-height: 1.65;
+  resize: vertical;
+}
+.mcp-json {
+  min-height: 300px;
+}
+.mcp-args {
+  min-height: 90px;
+}
+.mcp-secrets-heading {
+  margin-top: 6px;
+  justify-content: space-between;
+}
+.mcp-secrets-heading label {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.mcp-secrets-heading small {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #9dac8c;
+}
+.mcp-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 30px;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+.mcp-form-footer {
+  justify-content: flex-end;
+  border-top: 1px solid #e0e8d5;
+  margin-top: 22px;
+  padding-top: 18px;
+}
+.mcp-form-footer > span {
+  margin-right: auto;
+  color: #94a580;
+  font-size: 13px;
+}
+@media (max-width: 680px) {
+  .mcp-card-top {
+    flex-wrap: wrap;
+  }
+  .mcp-status {
+    margin-left: 56px;
+  }
+  .mcp-card-bottom {
+    flex-wrap: wrap;
+  }
+  .mcp-actions {
+    width: 100%;
+    margin: 8px 0 0;
+  }
+  .mcp-toolbar {
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .mcp-toolbar > div {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .mcp-form-footer {
+    flex-wrap: wrap;
+  }
+}
 .local-badge {
   display: flex;
   gap: 7px;

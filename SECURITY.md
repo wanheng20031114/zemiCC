@@ -8,7 +8,7 @@ zemiCC is a local, single-user coding tool. It is not designed for network hosti
 - The input is masked and cleared immediately on submission. The UI stores only connection status.
 - The backend retains a key in a private in-memory field. It passes the key to the SDK child process environment for authentication. It does not log requests, headers, SDK stderr, or raw SDK events.
 - SDK transcript persistence is explicitly disabled. User environment credentials, global Claude settings, custom gateways and inherited entrypoint overrides are excluded from the SDK process.
-- App events and local history redact the live key and common credential formats. Streaming holds back incomplete prefixes of the live key to avoid exposing it across event boundaries.
+- App events and local history redact the live key, MCP credential values and common credential formats. Streaming holds back incomplete prefixes of known credentials to avoid exposing them across event boundaries. Redaction is best effort, not a defense against encoded or transformed secrets; very short MCP values are only redacted on exact matches.
 - Closing the desktop app terminates its workers and releases the key. Browser mode requires stopping the server. JavaScript strings cannot provide cryptographic zeroization guarantees; memory dumps, swap and hostile software running as the same OS user are outside this boundary.
 
 ## Local service
@@ -30,6 +30,16 @@ The optional **manual** mode requests review for file writes, content searches a
 Arbitrary shell commands are not sandboxed and can access disk, process credentials and the network after either automatic or human approval. The classifier can make mistakes, and code invoked by a seemingly routine build/test can have arbitrary side effects. Project file-path checks do not constrain shell processes or every file reached by recursive search. Use auto mode only for projects you trust; it is not a guarantee that all dangerous actions will be caught. New tools and external integrations are not enabled implicitly.
 
 zemiCC does not impose a turn limit or a monetary cutoff: SDK queries omit both `maxTurns` and `maxBudgetUsd`. Long tasks can continue without an app-defined cap, and users can stop them at any time. Provider quotas, rate limits, context handling and network failures still apply. API charges accrue with use; SDK usage estimates may exclude separate permission-classifier calls and are not a complete billing statement. Stopping a worker is best effort and cannot undo completed side effects or necessarily stop processes deliberately detached by an approved command. The agent is instructed not to detach processes.
+
+## MCP integrations
+
+Only servers explicitly configured inside zemiCC are attached. SDK queries use `strictMcpConfig: true`; project and global MCP definitions are not loaded implicitly. Servers may use stdio, Streamable HTTP or SSE. Remote connections require HTTPS except on loopback. Header/token authentication is supported; browser OAuth sign-in is not yet exposed.
+
+The local `mcp-servers.json` contains connection names, commands, arguments, URLs, enabled state and credential field names. Environment variable and header values remain in process memory and must be re-entered after restart. Editing an existing field with a blank value retains its in-memory value; removing the field removes it from subsequent connections. Retired credential values remain in the redactor until process exit, so late output cannot expose them. Configurations go to `setMcpServers()` over the SDK control stream, not secret-bearing command-line arguments or temporary MCP files. The app does not return credentials to the UI. Recognizable credentials in public connection fields are rejected, but this is not a general secret detector: never put credentials in names, commands, arguments or URLs.
+
+MCP stdio processes do not inherit the app's Claude API key by default. Users can explicitly supply credentials to a server through its environment fields. Servers run as the current OS user and are not sandboxed; they can read or modify files and use the network. Remote services receive tool-call parameters and associated data. A connection test starts the configured server, performs protocol discovery and lists tools without a model request or tool invocation; server startup itself can have side effects. Only connect trusted servers.
+
+Registered dynamic MCP tools defer to native SDK review in auto mode; manual mode and unknown provenance request confirmation. Server-provided tool annotations are not used as blanket permission grants. Configuration changes are blocked during active tasks, disconnect idle connections and apply before the next prompt while retaining the conversation. A 30-second connection-test timeout does not limit agent tasks or MCP tool execution.
 
 ## Local data
 

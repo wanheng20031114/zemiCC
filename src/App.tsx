@@ -25,6 +25,7 @@ import {
   Layers2,
   LockKeyhole,
   MessageSquare,
+  Plug,
   PanelRightClose,
   PanelRightOpen,
   Plus,
@@ -53,6 +54,8 @@ import type {
 import { MODELS } from "../shared/types";
 import { api, bootstrap } from "./api";
 import { useZoom } from "./useZoom";
+import { Modal } from "./Modal";
+import { McpDialog } from "./McpDialog";
 
 const basename = (p: string) =>
   p.split(/[\\/]/).filter(Boolean).at(-1) || "选择项目";
@@ -103,46 +106,6 @@ function IconButton({
     >
       {children}
     </button>
-  );
-}
-function Modal({
-  title,
-  subtitle,
-  children,
-  onClose,
-  wide = false,
-}: {
-  title: string;
-  subtitle?: string;
-  children: ReactNode;
-  onClose: () => void;
-  wide?: boolean;
-}) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
-  return (
-    <dialog
-      ref={dialog}
-      className={`modal ${wide ? "wide" : ""}`}
-      onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === dialog.current) onClose();
-      }}
-      aria-label={title}
-    >
-      <div className="modal-heading">
-        <div>
-          <h2>{title}</h2>
-          {subtitle && <p>{subtitle}</p>}
-        </div>
-        <IconButton label="关闭" onClick={onClose}>
-          <X size={19} />
-        </IconButton>
-      </div>
-      {children}
-    </dialog>
   );
 }
 function Markdown({ text }: { text: string }) {
@@ -812,11 +775,13 @@ export default function App() {
     permissionMode: "auto",
     sessions: [],
     version: "",
+    mcp: [],
   });
   const [selected, setSelected] = useState<string>();
   const [model, setModel] = useState(MODELS[0].id);
   const [draft, setDraft] = useState(""),
     [connectionOpen, setConnectionOpen] = useState(false),
+    [mcpOpen, setMcpOpen] = useState(false),
     [projectOpen, setProjectOpen] = useState(false),
     [permissionOpen, setPermissionOpen] = useState(false),
     [permissionSaving, setPermissionSaving] = useState(false),
@@ -1052,6 +1017,16 @@ export default function App() {
           )}
         </div>
         <div className="sidebar-bottom">
+          <button
+            className="mcp-sidebar-button"
+            disabled={!online}
+            onClick={() => setMcpOpen(true)}
+          >
+            <Plug size={17} />
+            <span>MCP 服务器</span>
+            <small>{state.mcp?.length || 0}</small>
+            <ChevronRight size={14} />
+          </button>
           <div className="local-badge">
             <span className={`status-dot ${online ? "online" : ""}`} />
             <span>{online ? "本地运行" : "服务未连接"}</span>
@@ -1348,6 +1323,17 @@ export default function App() {
           connected={state.connected}
           onClose={() => setConnectionOpen(false)}
           onChange={() => void reload()}
+        />
+      )}
+      {mcpOpen && (
+        <McpDialog
+          servers={state.mcp || []}
+          busy={state.sessions.some(
+            (session) =>
+              session.phase === "running" || session.phase === "approval",
+          )}
+          onClose={() => setMcpOpen(false)}
+          onChange={reload}
         />
       )}
       {permissionOpen && (

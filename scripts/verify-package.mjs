@@ -22,6 +22,7 @@ const required = [
   "dist/index.html",
   "dist-server/server/index.js",
   "dist-server/server/agent.js",
+  "dist-server/server/mcp.js",
   "dist-server/package.json",
   "node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs",
   "LICENSE",
@@ -37,7 +38,7 @@ for (const name of entries) {
     `Unexpected package content: ${name}`,
   );
   assert.ok(
-    !/(?:^|\/)(?:\.zemicc|\.git|\.env(?:\.[^/]*)?|workspace\.json|sdk-session-[^/]*)(?:\/|$)/.test(
+    !/(?:^|\/)(?:\.zemicc|\.git|\.env(?:\.[^/]*)?|workspace\.json|mcp-servers\.json(?:\.tmp)?|mcp-check-[^/]*|sdk-session-[^/]*)(?:\/|$)/.test(
       name,
     ),
     `Private data in package: ${name}`,
