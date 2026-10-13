@@ -88,6 +88,10 @@ textarea {
   padding: 0 12px 36px;
   color: #d1dabd;
 }
+.app-mark {
+  display: block;
+  flex-shrink: 0;
+}
 .brand > span:first-of-type {
   font-size: 23px;
   letter-spacing: -1px;

@@ -1,5 +1,7 @@
 # zemiCC
 
+<img src="desktop/assets/icon.svg" width="88" height="88" alt="zemiCC" />
+
 **A little space. A big idea.**
 
 一个安静、清爽的 Claude Agent SDK 桌面工作区。打开项目，输入自己的 API key，开始创造。

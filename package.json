@@ -1,19 +1,19 @@
 {
   "name": "zemicc",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "A quiet desktop workspace for the Claude Agent SDK. Your key stays in memory.",
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "tsc --noEmit && vite build && tsc -p tsconfig.server.json",
+    "build": "npm run icons && tsc --noEmit && vite build && tsc -p tsconfig.server.json",
     "start": "node dist-server/server/index.js",
     "desktop": "electron .",
     "test": "tsx --test tests/*.test.ts",
     "check": "tsc --noEmit",
     "icons": "node scripts/build-icons.mjs",
-    "pack:win": "npm run build && npm run icons && electron-builder --win --x64 --dir",
-    "dist:win": "npm run build && npm run icons && electron-builder --win --x64 --publish never && npm run verify:package && node scripts/checksums.mjs",
+    "pack:win": "npm run build && electron-builder --win --x64 --dir",
+    "dist:win": "npm run build && electron-builder --win --x64 --publish never && npm run verify:package && node scripts/checksums.mjs",
     "verify:package": "node scripts/verify-package.mjs"
   },
   "main": "desktop/main.mjs",

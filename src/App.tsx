@@ -67,22 +67,14 @@ const phaseText = {
 };
 function Mark({ size = 32 }: { size?: number }) {
   return (
-    <svg
+    <img
+      className="app-mark"
+      src="/mark.svg"
       width={size}
       height={size}
-      viewBox="0 0 64 64"
-      fill="none"
+      alt=""
       aria-hidden="true"
-    >
-      <rect width="64" height="64" rx="19" fill="currentColor" />
-      <path
-        d="M18 20h29L18 44h29M20 32h24"
-        stroke="var(--mark-ink, #292e27)"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 }
 function IconButton({

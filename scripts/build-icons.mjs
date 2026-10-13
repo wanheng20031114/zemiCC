@@ -4,6 +4,8 @@ import sharp from "sharp";
 
 const source = new URL("../desktop/assets/icon.svg", import.meta.url);
 const svg = await fs.readFile(source);
+// One vector master for the desktop, in-app mark and browser favicon.
+await fs.copyFile(source, new URL("../public/mark.svg", import.meta.url));
 await sharp(svg)
   .resize(512, 512)
   .png()
@@ -31,4 +33,4 @@ await fs.writeFile(
   new URL("../desktop/assets/icon.ico", import.meta.url),
   Buffer.concat([header, ...images]),
 );
-console.log("Generated zemiCC PNG and Windows icons.");
+console.log("Generated zemiCC app mark, PNG and multi-size Windows icon.");
