@@ -17,6 +17,7 @@ export async function startServer(
     port?: number;
     root?: string;
     dataDir?: string;
+    claudeExecutablePath?: string;
     pickDirectory?: () => Promise<string | undefined>;
   } = {},
 ) {
@@ -25,6 +26,7 @@ export async function startServer(
     options.dataDir ||
       process.env.ZEMICC_DATA_DIR ||
       path.join(root, ".zemicc"),
+    options.claudeExecutablePath,
   );
   await host.init();
   const app = express();

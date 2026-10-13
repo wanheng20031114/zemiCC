@@ -2,6 +2,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Request, Response, NextFunction } from "express";
+import { APP_VERSION } from "../shared/version.js";
 
 /** Deliberately has no serialization method. A key exists for this process only. */
 export class CredentialVault {
@@ -180,7 +181,7 @@ export function sdkEnvironment(key: string, configDir: string) {
     ANTHROPIC_API_KEY: key,
     ANTHROPIC_BASE_URL: "https://api.anthropic.com",
     CLAUDE_CONFIG_DIR: configDir,
-    CLAUDE_AGENT_SDK_CLIENT_APP: "zemicc/0.1.0",
+    CLAUDE_AGENT_SDK_CLIENT_APP: `zemicc/${APP_VERSION}`,
     DISABLE_TELEMETRY: "1",
     DISABLE_ERROR_REPORTING: "1",
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1",

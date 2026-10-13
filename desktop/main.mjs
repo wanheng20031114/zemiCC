@@ -1,11 +1,19 @@
 import { app, BrowserWindow, dialog, shell, session, ipcMain } from "electron";
 import path from "node:path";
+import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { startServer } from "../dist-server/server/index.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const appId = "io.github.wanheng20031114.zemicc";
 app.setName("zemiCC");
-app.setPath("userData", path.join(root, ".zemicc", "desktop"));
+app.setAppUserModelId(appId);
+app.setPath(
+  "userData",
+  app.isPackaged
+    ? path.join(app.getPath("appData"), "zemiCC")
+    : path.join(root, ".zemicc", "desktop"),
+);
 app.commandLine.appendSwitch("disable-http-cache");
 app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -15,6 +23,7 @@ else {
   app.on("second-instance", () => {
     if (window) {
       if (window.isMinimized()) window.restore();
+      window.show();
       window.focus();
     }
   });
@@ -29,8 +38,16 @@ else {
         (_webContents, _permission, callback) => callback(false),
       );
       ephemeral.setPermissionCheckHandler(() => false);
+      const claudeExecutablePath = app.isPackaged
+        ? path.join(process.resourcesPath, "agent", "claude.exe")
+        : undefined;
+      if (claudeExecutablePath) await fs.access(claudeExecutablePath);
       server = await startServer({
         root,
+        dataDir: app.isPackaged
+          ? path.join(app.getPath("userData"), "workspace")
+          : path.join(root, ".zemicc"),
+        claudeExecutablePath,
         port: 4317,
         pickDirectory: async () => {
           const result = await dialog.showOpenDialog(window, {
@@ -42,6 +59,7 @@ else {
       });
       window = new BrowserWindow({
         title: "zemiCC",
+        icon: path.join(root, "desktop", "assets", "icon.png"),
         width: 1440,
         height: 960,
         minWidth: 850,
@@ -60,6 +78,14 @@ else {
           spellcheck: false,
         },
       });
+      if (app.isPackaged && process.platform === "win32") {
+        window.setAppDetails({
+          appId,
+          appIconPath: process.execPath,
+          relaunchCommand: `"${process.execPath}"`,
+          relaunchDisplayName: "zemiCC",
+        });
+      }
       function setZoom(value) {
         if (typeof value !== "number" || !Number.isFinite(value))
           throw new Error("Invalid zoom");
@@ -124,7 +150,9 @@ else {
         "zemiCC 启动失败",
         error?.code === "EADDRINUSE"
           ? "本机端口 4317 已被使用。请关闭正在运行的 zemiCC 或浏览器服务后重试。"
-          : "请先运行 npm install 和 npm run build，再打开 zemiCC。",
+          : app.isPackaged
+            ? "应用文件或本地数据无法读取。请尝试重新安装 zemiCC；本地会话会保留。"
+            : "请先运行 npm install 和 npm run build，再打开 zemiCC。",
       );
       await server?.close();
       app.quit();

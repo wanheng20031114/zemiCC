@@ -1,6 +1,6 @@
 {
   "name": "zemicc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "A quiet desktop workspace for the Claude Agent SDK. Your key stays in memory.",
@@ -10,13 +10,23 @@
     "start": "node dist-server/server/index.js",
     "desktop": "electron .",
     "test": "tsx --test tests/*.test.ts",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "icons": "node scripts/build-icons.mjs",
+    "pack:win": "npm run build && npm run icons && electron-builder --win --x64 --dir",
+    "dist:win": "npm run build && npm run icons && electron-builder --win --x64 --publish never && npm run verify:package && node scripts/checksums.mjs",
+    "verify:package": "node scripts/verify-package.mjs"
   },
   "main": "desktop/main.mjs",
   "engines": {
     "node": ">=22"
   },
   "license": "MIT",
+  "author": "zemiCC contributors",
+  "homepage": "https://github.com/wanheng20031114/zemiCC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wanheng20031114/zemiCC.git"
+  },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.296",
     "express": "^5.3.0",
@@ -27,13 +37,16 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@electron/asar": "^4.3.1",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
     "prettier": "^3.9.10",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"

@@ -33,6 +33,10 @@ Each SDK worker has a 40-turn task limit and a USD 5 query-budget option for its
 
 ## Local data
 
-`.zemicc/` contains project paths and redacted conversations. Each SDK worker gets a separate temporary runtime directory; its non-secret caches and policy identity metadata are removed when the worker closes. A forced process crash can leave that temporary metadata behind, but API keys are not written there. The entire directory is ignored by Git. Session deletion removes the app's current record but is not secure deletion of disk sectors or backups. Project source and conversations may be sent to Anthropic when the user starts a task. No project content is published to GitHub by the app.
+The installed application stores project paths and redacted conversations in `%APPDATA%\zemiCC\workspace\`; source development uses the Git-ignored `.zemicc/` directory. Neither is inside the packaged application's code. Each SDK worker gets a separate temporary runtime directory; its non-secret caches and policy identity metadata are removed when the worker closes. A forced process crash can leave that temporary metadata behind, but API keys are not written there. Session deletion removes the app's current record but is not secure deletion of disk sectors or backups. Project source and conversations may be sent to Anthropic when the user starts a task. No project content is published to GitHub by the app.
+
+## Release packages
+
+Windows packages include Electron and the matching native Claude Agent runtime. Packaged SDK workers use the explicit bundled executable, not a user-installed Node.js or global Claude CLI. An allowlist excludes user data, credentials and development tools from builds; package verification checks archive contents and the native runtime checksum. GitHub release artifacts are built in a clean Windows runner with no API credentials. The initial release is unsigned; SHA-256 checksums are included for downloaded artifacts. Updates are manual and preserve local data. The app does not grant administrator privileges or change global Claude/OpenCode configuration.
 
 Report reproducible security issues privately to the repository owner, without attaching live credentials or private conversations.

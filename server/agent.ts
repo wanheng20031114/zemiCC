@@ -16,6 +16,7 @@ import type {
 } from "../shared/types.js";
 import { CredentialVault, sdkEnvironment } from "./security.js";
 import { toolPolicy } from "./permissions.js";
+import { APP_VERSION } from "../shared/version.js";
 
 class PromptQueue implements AsyncIterable<SDKUserMessage> {
   items: SDKUserMessage[] = [];
@@ -70,7 +71,10 @@ export class AgentHost {
   #saveQueue: Promise<void> = Promise.resolve();
   #timers = new Map<string, NodeJS.Timeout>();
   #modeChanges = new Set<string>();
-  constructor(readonly dataDir: string) {}
+  constructor(
+    readonly dataDir: string,
+    readonly claudeExecutablePath?: string,
+  ) {}
   async init() {
     await fs.mkdir(this.dataDir, { recursive: true });
     try {
@@ -108,7 +112,7 @@ export class AgentHost {
       sessions: [...this.sessions.values()].sort(
         (a, b) => b.updated - a.updated,
       ),
-      version: "0.1.0",
+      version: APP_VERSION,
     };
   }
   emit(event: unknown) {
@@ -393,7 +397,7 @@ export class AgentHost {
       options: {
         cwd: s.project,
         model,
-        executable: "node",
+        pathToClaudeCodeExecutable: this.claudeExecutablePath,
         abortController: abort,
         includePartialMessages: true,
         persistSession: false,

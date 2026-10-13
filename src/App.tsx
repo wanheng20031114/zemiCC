@@ -819,7 +819,7 @@ export default function App() {
     connected: false,
     permissionMode: "auto",
     sessions: [],
-    version: "0.1.0",
+    version: "",
   });
   const [selected, setSelected] = useState<string>();
   const [model, setModel] = useState(MODELS[0].id);
@@ -1063,7 +1063,7 @@ export default function App() {
           <div className="local-badge">
             <span className={`status-dot ${online ? "online" : ""}`} />
             <span>{online ? "本地运行" : "服务未连接"}</span>
-            <span>v{state.version}</span>
+            <span>{state.version ? `v${state.version}` : ""}</span>
           </div>
           <button
             className="connection-button"

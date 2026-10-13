@@ -1,0 +1,54 @@
+appId: io.github.wanheng20031114.zemicc
+productName: zemiCC
+executableName: zemiCC
+copyright: Copyright © 2026 zemiCC contributors
+directories:
+  output: release
+  buildResources: desktop/assets
+asar: true
+npmRebuild: false
+files:
+  - dist/**/*
+  - dist-server/**/*
+  - desktop/main.mjs
+  - desktop/preload.cjs
+  - desktop/assets/icon.png
+  - package.json
+  - LICENSE
+  - THIRD_PARTY_NOTICES.md
+  - "!node_modules/@anthropic-ai/claude-agent-sdk-*/**/*"
+  - "!**/.zemicc{,/**/*}"
+  - "!**/.env{,.*}"
+extraResources:
+  - from: node_modules/@anthropic-ai/claude-agent-sdk/README.md
+    to: licenses/claude-agent-sdk/README.md
+  - from: node_modules/@anthropic-ai/claude-agent-sdk-win32-x64
+    to: agent
+    filter:
+      - claude.exe
+      - package.json
+      - README.md
+      - LICENSE.md
+win:
+  icon: desktop/assets/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+  artifactName: zemiCC-${version}-win-${arch}.${ext}
+  requestedExecutionLevel: asInvoker
+  signExecutable: false
+nsis:
+  artifactName: zemiCC-Setup-${version}-${arch}.${ext}
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: zemiCC
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+  packElevateHelper: false
+publish: null
