@@ -8,42 +8,17 @@ export type ToolPolicy = {
   reason?: string;
 };
 
-// These are extra human-review triggers, NOT a shell parser or an allowlist.
-// Every other command still passes through the SDK's native auto classifier.
-export function commandReviewReason(command: string, background = false) {
-  if (background) return "此命令将在后台持续运行";
-  if (
-    /\b(rm|rmdir|unlink|del|erase|remove-item|clear-content|remove-directory)\b/i.test(
-      command,
-    )
-  )
-    return "此操作会删除文件或清空内容";
-  if (
-    /\bgit\b[^\r\n]*(?:\b(reset|clean|restore|rebase|push)\b|\bcheckout\b[^\r\n]*(?:--| -f\b)|\bbranch\b[^\r\n]* -[dD]\b)/i.test(
-      command,
-    )
-  )
-    return "此操作可能丢弃修改、改写历史或推送到远程";
-  if (
-    /\b(sudo|runas|chmod|chown|icacls|takeown|set-executionpolicy|regedit|shutdown|restart-computer|stop-computer)\b|\b-Verb\s+RunAs\b/i.test(
-      command,
-    )
-  )
-    return "此操作会改变系统、权限或以管理员身份执行";
+// Keep a credential-specific review trigger. The SDK's native auto classifier
+// evaluates every other complete command, including pipelines, substitutions,
+// redirections and background commands. A keyword or ../ alone is not a reason
+// for the app to force a human prompt. Never turn this into a shell allowlist.
+export function commandReviewReason(command: string) {
   if (
     /(?:^|[\s/\\'"=])\.env(?:\b|\.)|\.(?:pem|pfx|p12|key)\b|\b(?:printenv|setenv|credentials|id_rsa|id_ed25519)\b|\benv:|\$env(?::|\b)|process\s*\.\s*env|os\s*\.\s*environ|\$(?:ANTHROPIC|AWS|OPENAI|GITHUB)_|[./\\](?:\.ssh|\.aws|\.azure)\b/i.test(
       command,
     )
   )
     return "此命令涉及环境变量、密钥或凭据文件";
-  if (
-    /\b(curl|wget)\b[^\r\n]*(?:--data|--upload-file|--form|\s-[dTF]\b|\s-X\s*(?:POST|PUT|PATCH|DELETE))|\b(?:invoke-restmethod|invoke-webrequest)\b[^\r\n]*-(?:Body|InFile|Method\s+(?:Post|Put|Patch|Delete))\b|\b(?:scp|sftp)\b|\b(?:npm|pnpm|yarn)\s+publish\b|\bgh\s+(?:api|release|pr|issue|repo)\b/i.test(
-      command,
-    )
-  )
-    return "此操作可能向外部发送数据或发布内容";
-  if (/(?:^|[\s'"=])(?:\.\.[/\\]|~[/\\])/.test(command))
-    return "此命令可能访问所选项目之外的位置";
   return undefined;
 }
 
@@ -110,10 +85,7 @@ export async function toolPolicy(
     if (["Bash", "PowerShell"].includes(tool)) {
       if (typeof input.command !== "string" || !input.command.trim())
         return result("deny", "命令为空");
-      const reason = commandReviewReason(
-        input.command,
-        input.run_in_background === true,
-      );
+      const reason = commandReviewReason(input.command);
       if (reason) return result("ask", reason);
       return mode === "manual"
         ? result("ask", "逐次确认模式：检查此命令")

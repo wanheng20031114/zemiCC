@@ -1285,7 +1285,7 @@ export default function App() {
                       {permissionMode === "auto"
                         ? current?.permissionFallback
                           ? "自动 · 命令确认"
-                          : "项目内自动"
+                          : "智能自动"
                         : "逐次确认"}
                       <ChevronDown size={12} />
                     </button>
@@ -1365,8 +1365,8 @@ export default function App() {
               [
                 {
                   mode: "auto",
-                  label: "项目内自动",
-                  description: "自动编辑与搜索，命令交由模型审核。",
+                  label: "智能自动",
+                  description: "日常操作自动继续，由 SDK 判断命令风险。",
                   icon: <Sparkles size={21} />,
                 },
                 {
@@ -1403,8 +1403,8 @@ export default function App() {
           <div className="permission-boundary">
             <ShieldCheck size={17} />
             <span>
-              删除 · 覆盖历史 · 对外发布 · 权限变更
-              <span>仍需确认，凭据文件保持受保护。</span>
+              Claude Agent SDK 原生自动审核
+              <span>需要人工授权时再确认，凭据保护始终保留。</span>
             </span>
           </div>
           <p className="permission-note">
